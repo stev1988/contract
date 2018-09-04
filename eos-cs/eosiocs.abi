@@ -1,0 +1,81 @@
+{
+  "version": "eosio::abi/1.0",
+  "types": [{
+      "new_type_name": "account_name",
+      "type": "name"
+    }
+  ],
+  "structs": [{
+      "name": "create",
+      "base": "",
+      "fields": [      ]
+    },{
+       "name": "buytoken",
+       "base": "",
+       "fields": [
+        {"name": "account","type": "account_name"},
+        {"name": "eos_quant","type": "asset"},
+        {"name": "referrer","type": "account_name"},
+       ]
+     },{
+      "name": "selltoken",
+      "base": "",
+      "fields": [account_name account,int64_t  ordernumber,int8_t sellall
+        {"name": "account","type": "account_name"},
+        {"name": "ordernumber","type": "int64"},
+        {"name": "sellall","type": "int8"},
+      ]
+    },{
+      "name": "connector",
+      "base": "",
+      "fields": [
+        {"name":"balance", "type":"asset"},
+        {"name":"weight", "type":"float64"}
+      ]
+    },{
+    "name": "exchange_state",
+    "base": "",
+    "fields": [
+      {"name":"supply", "type":"asset"},
+      {"name":"base", "type":"connector"},
+      {"name":"quote", "type":"connector"}
+    ]
+  },{
+    "name": "market",
+    "base": "",
+    "fields": [
+        {"name":"symbol", "type":"symbol"},
+        {"name":"state", "type":"exchange_state"},
+        {"name":"develop_balance", "type":"asset"},
+        {"name":"share_balance", "type":"asset"},
+        {"name":"rewards_balance", "type":"asset"},
+        {"name":"token_total", "type":"asset"},
+        {"name":"eos_total", "type":"asset"},
+    ]
+  }
+  ],
+  "actions": [{
+      "name": "create",
+      "type": "create",
+      "ricardian_contract": ""
+    },{
+      "name": "buy",
+      "type": "buy",
+      "ricardian_contract": ""
+    },{
+      "name": "sell",
+      "type": "sell",
+      "ricardian_contract": ""
+    }
+  ],
+  "tables": [{
+       "name": "markets",
+       "type": "market",
+       "index_type": "i64",
+       "key_names" : ["supply"],
+       "key_types" : ["uint64"]
+     }
+  ],
+  "ricardian_clauses": [],
+  "abi_extensions": []
+}
