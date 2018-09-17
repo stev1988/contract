@@ -41,8 +41,14 @@ namespace etb {
 
         void subtoken( account_name account,asset quant,account_name token_contract, symbol_type token_symbol );
 
-    };
+        void setparam(account_name token_contract,symbol_type token_symbol, string paramname, string param);
 
+        void pause();
+
+        void restart();
+
+
+    };
 
 }
 #endif //EOSIO_ETBEXCHANGE_H

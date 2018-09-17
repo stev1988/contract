@@ -55,25 +55,56 @@
           {"name": "token_symbol","type": "symbol"}
         ]
       },{
+          "name": "setparam",
+          "base": "",
+          "fields": [
+            {"name": "token_contract","type": "account_name"},
+            {"name": "token_symbol","type": "symbol"},
+            {"name": "paramname","type": "string"},
+            {"name": "param","type": "string"}
+        ]
+    },{
+       "name": "pause",
+       "base": "",
+       "fields": []
+     },{
+      "name": "restart",
+      "base": "",
+      "fields": [
+      ]
+    },{
     "name": "connector",
     "base": "",
     "fields": [
       {"name":"contract", "type":"account_name"},
       {"name":"balance", "type":"asset"},
-      {"name":"weight", "type":"float64"}
+      {"name":"weight", "type":"float64"},
     ]
-  },{
+    },{
     "name": "exchange_state",
     "base": "",
     "fields": [
       {"name":"id", "type":"uint64"},
+      {"name":"exchange_type", "type":"uint64"},
       {"name":"idxkey", "type":"uint128"},
       {"name":"supply", "type":"asset"},
       {"name":"base", "type":"connector"},
       {"name":"quote", "type":"connector"},
       {"name":"exchange_account", "type":"account_name"},
     ]
-  }
+  },{
+       "name": "exchange_state1",
+       "base": "",
+       "fields": [
+         {"name":"id", "type":"uint64"},
+         {"name":"exchange_type", "type":"uint64"},
+         {"name":"idxkey", "type":"uint128"},
+         {"name":"supply", "type":"asset"},
+         {"name":"base", "type":"connector"},
+         {"name":"quote", "type":"connector"},
+         {"name":"exchange_account", "type":"account_name"},
+       ]
+     }
   ],
   "actions": [{
       "name": "create",
@@ -95,7 +126,19 @@
          "name": "subtoken",
          "type": "subtoken",
          "ricardian_contract": ""
-     }
+     },{
+         "name": "setparam",
+         "type": "setparam",
+         "ricardian_contract": ""
+     },{
+       "name": "pause",
+       "type": "pause",
+       "ricardian_contract": ""
+   },{
+       "name": "restart",
+       "type": "restart",
+       "ricardian_contract": ""
+   }
   ],
   "tables": [{
        "name": "markets",
@@ -103,7 +146,13 @@
        "index_type": "i64",
        "key_names" : ["supply"],
        "key_types" : ["uint64"]
-     }
+     },{
+          "name": "markets1",
+          "type": "exchange_state1",
+          "index_type": "i64",
+          "key_names" : ["supply"],
+          "key_types" : ["uint64"]
+        }
   ],
   "ricardian_clauses": [],
   "abi_extensions": []
