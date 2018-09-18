@@ -147,7 +147,6 @@ namespace eosguess {
     typedef eosio::multi_index<N(accounttb), accountinfo
     > accounttb;
 
-///@abi table
     struct market {
         symbol_type symbol;
 

@@ -21,10 +21,10 @@ namespace eosguess {
 
     const int64_t expire_time = 4 * 60;     //游戏前4分钟可以买卖
     const int64_t end_time = 5 * 60;        //游戏5分钟后结束
-//    const int64_t day_time = 24 * 3600;     //每天的时间
+    const int64_t day_time = 24 * 3600;     //每天的时间
 //    const int64_t expire_time = 30;     //游戏前4分钟可以买卖
 //    const int64_t end_time =  60;        //游戏5分钟后结束
-    const int64_t day_time = 10*60;     //每天的时间
+//    const int64_t day_time = 10*60;     //每天的时间
 
 
     void guess::create( asset        maximum_supply )
@@ -78,7 +78,6 @@ namespace eosguess {
         eosio_assert( existing != statstable.end(), "token with symbol does not exist, create token before issue" );
         const auto& st = *existing;
 
-//        require_auth( st.issuer );
         eosio_assert( quantity.is_valid(), "invalid quantity" );
         eosio_assert( quantity.amount > 0, "must issue positive quantity" );
 
@@ -92,7 +91,6 @@ namespace eosguess {
         add_balance( st.issuer, quantity, st.issuer );
 
         if( to != st.issuer ) {
-//            SEND_INLINE_ACTION( *this, transfer, {st.issuer,N(active)}, {st.issuer, to, quantity, memo} );
             transfer(st.issuer, to, quantity, memo);
         }
     }
@@ -157,11 +155,6 @@ namespace eosguess {
     void guess::buy(account_name account, asset quant,account_name referrer){
         require_auth(account);
 
-
-        print("\naccount:",name{account},",referrer:",name{referrer},"self:",name{_self},"\n");
-        quant.print();
-
-
         eosio_assert(quant.amount >= 10000, "amount must >= 1.0000 EOS" );
         eosio_assert(quant.symbol == S(4, EOS), "symbol must be EOS");
 
@@ -184,11 +177,6 @@ namespace eosguess {
         _markets.modify( itr_markets, 0, [&]( auto& es ) {
             token_out = es.state.convert( after_fee+referrer_fee, TOKEN_SYMBOL);
         });
-
-        print("\ntoken_out:");
-        token_out.print();
-        print("\nplatform_fee:");
-        platform_fee.print();
 
         eosio_assert(token_out.amount > 0, "must reserve a positive amount");
 
@@ -230,9 +218,6 @@ namespace eosguess {
     }
     void guess::sell(account_name account,asset quant){
         require_auth(account);
-        print("\naccount:",name{account},"\n");
-        quant.print();
-
 
         eosio_assert(quant.amount >= 0, "amount must be a positive amount" );
         eosio_assert(quant.symbol == TOKEN_SYMBOL, "symbol must be YZB");
@@ -254,15 +239,15 @@ namespace eosguess {
 
         eosio_assert(after_fee.amount > 0, "must reserve a positive amount");
 
-        print("\n after fee:");
-        after_fee.print();
+//        print("\n after fee:");
+//        after_fee.print();
         action(
                 permission_level{ _self, N(active) },
                 N(eosio.token), N(transfer),
                 std::make_tuple(_self, account, after_fee, std::string("send EOS to account"))
         ).send();
 
-        print("\n platform fee:");
+//        print("\n platform fee:");
         platform_fee.print();
         action(
                 permission_level{ _self, N(active) },
@@ -407,19 +392,16 @@ namespace eosguess {
 
         sharepooltb _sharepooltb(_self, _self);
         int64_t date = itr_gametables->end_time.utc_seconds / day_time * day_time;
-        print("\ndate:",date);
         auto itr_sharepooltb = _sharepooltb.find(date);
         if(itr_sharepooltb == _sharepooltb.end()){//当天需要结算,进行快照
             snapshot();
             _sharepooltb.emplace( _self, [&]( auto& m ) {
                 m.date = time_point_sec(date);
                 m.total_share = itr_gametables->total_share;
-//                m.current_supply = get_supply(symbol_type(TOKEN_SYMBOL).name()).amount - itr_markets->state.base.balance.amount;
             });
         }else{//统计分红
             _sharepooltb.modify( *itr_sharepooltb, 0, [&]( auto& m ) {
                 m.total_share += itr_gametables->total_share;
-//                m.current_supply = get_supply(symbol_type(TOKEN_SYMBOL).name()).amount - itr_markets->state.base.balance.amount;
             });
         }
 
@@ -489,10 +471,6 @@ namespace eosguess {
 
                 const asset token_balance = ac->balance;
 
-
-                print("\namount:",name{itr_account->account}, ",token_supply:");
-                token_balance.print();
-
                 share = token_balance.amount * _sharepool.total_share /current_supply;
                 if(share > 0){
                     transfer(_self, itr_account->account, asset{share, TOKEN_SYMBOL},"");
@@ -543,7 +521,6 @@ extern "C" {
                 separator_pos++;
 
                 string referrer_str = memo.substr(separator_pos, 12);
-//                eosio_assert(referrer_str.length() == 12, "Length of referrer name should be 12");
                 if(referrer_str.length() != 12){
                     thiscontract.buy(tmp.from, tmp.quantity,ACC_PLATFORM);
                 }else{
@@ -554,41 +531,6 @@ extern "C" {
             }
 
         }
-//        else if(code == ACC_ISSUEYZB &&  action == N(transfer)){
-//            eosio::token::transfer_args tmp = unpack_action_data<eosio::token::transfer_args>();
-//
-//            string memo = tmp.memo;
-//
-//            memo.erase(memo.begin(), find_if(memo.begin(), memo.end(), [](int ch) {
-//                return !isspace(ch);
-//            }));
-//            memo.erase(find_if(memo.rbegin(), memo.rend(), [](int ch) {
-//                return !isspace(ch);
-//            }).base(), memo.end());
-//
-//            auto separator_pos = memo.find(' ');
-//            if (separator_pos == string::npos) {
-//                separator_pos = memo.find(':');
-//            }
-//
-//            eosio_assert(separator_pos != string::npos, "Function name and other command must be separated with space or colon");
-//
-//            string func_name_str = memo.substr(0, separator_pos);
-//            if(0 == func_name_str.compare("sell")){
-//                thiscontract.sell(tmp.from, tmp.quantity);
-//            }else if(0 == func_name_str.compare("join")){
-//                separator_pos++;
-//                auto separator_pos1 = memo.find(':',separator_pos);
-//                eosio_assert(separator_pos1 != string::npos, "Function name and other command must be separated with space or colon");
-//
-//                string flag_str = memo.substr(separator_pos, separator_pos1-separator_pos);
-//                eosio_assert(flag_str.length() < 3, "Length of flag should be less than 3");
-//
-//                thiscontract.join(tmp.from, tmp.quantity, atol(flag_str.c_str()));
-//            }else{
-////                eosio_assert(0, "Please input the right function");
-//            }
-//        }
         else if (code == self  || action == N(onerror) ){
             switch (action)
             {
