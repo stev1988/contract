@@ -36,9 +36,6 @@ namespace eosguess {
 
         inline asset get_balance( account_name owner, symbol_name sym )const;
 
-
-//        void createmarket();
-
         void buy(account_name account, asset quant,account_name referrer);
 
         void sell(account_name account,asset quant);

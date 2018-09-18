@@ -2,9 +2,9 @@
 sh /home/root1/work/ET-exchange/etbexchange/bancor.sh
 cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  get table etbexchanger etbexchanger markets
 
-eosiocpp -o /home/root1/work/contract/etbexchange/etbexchange.wast  /home/root1/work/contract/etbexchange/etbexchange.cpp /home/root1/work/contract/etbexchange/exchange_state.cpp
-eosiocpp -g /home/root1/work/contract/etbexchange/etbexchange.api  /home/root1/work/contract/etbexchange/etbexchange.cpp
-cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 set contract etbexchanger /home/root1/work/contract/etbexchange -p etbexchanger
+eosiocpp -o /home/root1/work/etbexchange/etbexchange.wast  /home/root1/work/etbexchange/etbexchange.cpp /home/root1/work/etbexchange/exchange_state.cpp
+eosiocpp -g /home/root1/work/etbexchange/etbexchange.api  /home/root1/work/etbexchange/etbexchange.cpp
+cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 set contract etbexchanger /home/root1/work/etbexchange -p etbexchanger
 cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  push action etbexchanger pause '[]' -p etbexchanger
 cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  get table etbexchanger etbexchanger markets
 

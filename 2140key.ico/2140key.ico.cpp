@@ -70,12 +70,9 @@ namespace eosico {
                           asset        quantity,
                           string       memo )
     {
-        print("\n from:",name{from});
-        print("\n to:",name{to});
-        quantity.print();
+        require_auth( from );
 
         eosio_assert( from != to, "cannot transfer to self" );
-        require_auth( from );
         eosio_assert( is_account( to ), "to account does not exist");
         auto sym = quantity.symbol.name();
         stats statstable( _self, sym );
@@ -166,12 +163,11 @@ using namespace eosico;
 extern "C" {
 
 void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
-    print( "\nicoapply,", name{receiver},"\n" );
+//    print( "\nicoapply,", name{receiver},"\n" );
 
     auto self = receiver;
     eosico::ico thiscontract( receiver );
     if( code == N(eosio.token) &&  action == N(transfer) ) {
-        print("\nbuykey");
         eosio::token::transfer_args tmp = unpack_action_data<eosio::token::transfer_args>();
 
         if(tmp.to != self){
@@ -201,9 +197,6 @@ void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
 
     }
     else if (code == self  || action == N(onerror) ){
-        print("\ncode=",name{code});
-        print("\naction1=",name{action});
-
         switch (action)
         {
             EOSIO_API( eosico::ico, (create)(issue)(transfer) )
