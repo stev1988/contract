@@ -49,6 +49,19 @@ token_contract: 	代币属于哪个合约,如TEST代币是issuemytoken部署创�
 token_symbol:		减少的代币符号     
 例如:当前市场1EOS可以买到10个TEST,那么减少1000个EOS时,会从bancor池中转出1000个EOS和10000个TEST到account中
 
+6. 设置参数     
+void exchange::setparam(account_name token_contract,symbol_type token_symbol, string paramname, string param);
+token_contract: 	代币属于哪个合约,如TEST代币是issuemytoken部署创建的      
+token_symbol:		减少的代币符号     
+paramname:          设置参数的名称,如exchange_type      
+param:              设置的参数           
+
+7. 暂停交易所        
+void exchange::pause();
+
+8. 重启交易所        
+void exchange::restart();
+
 ##
 二. 交易所操作步骤:合约账号:etbexchanger,用于创建交易所;(可在主网上查看)
 

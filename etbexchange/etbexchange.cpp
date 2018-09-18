@@ -285,6 +285,12 @@ namespace etb {
         }
     }
 
+    /* 设置参数
+     *  token_contract: 	代币属于哪个合约,如TEST代币是issuemytoken部署创建的
+     *  token_symbol:		减少的代币符号
+     *  paramname:          设置参数的名称,如exchange_type
+     *  param:              设置的参数
+     * */
     void exchange::setparam(account_name token_contract,symbol_type token_symbol, string paramname, string param){
         require_auth( _self );
 
@@ -294,8 +300,8 @@ namespace etb {
         auto idx = _market.template get_index<N(idxkey)>();
         auto market = idx.get(idxkey,"token market does not exist");
 
-        print("\nparamname",paramname);
-        print("\nparam",param);
+//        print("\nparamname",paramname);
+//        print("\nparam",param);
         if(!strcmp(paramname.c_str(),"exchange_type")){
             _market.modify( market, 0, [&]( auto& es ) {
                 es.exchange_type = atol(param.c_str());
@@ -323,15 +329,17 @@ namespace etb {
         }
     }
 
+    /* 暂停交易所,用于交易所功能升级等情况
+     * 1.调用pause暂停交易所,把markets的所有数据保存到markets1中,清空markets的数据;
+     * 2.修改markets结构,重新发布合约,调用restart重启交易所
+     * */
     void exchange::pause(){
         require_auth( _self );
 
         markets1 _markets1(_self, _self);
         markets _markets(_self, _self);
 
-
         for(auto itr=_markets.begin(); itr != _markets.end(); ){
-
             _markets1.emplace( _self, [&]( auto& m ) {
                 m.id = itr->id;
                 m.exchange_type = itr->exchange_type;
@@ -351,7 +359,10 @@ namespace etb {
             itr=_markets.begin();
         }
     }
-
+    /* 重启交易所,配合pause一起使用
+     * 1.调用pause暂停交易所,把markets的所有数据保存到markets1中,清空markets的数据;
+     * 2.修改markets结构,重新发布合约,调用restart重启交易所
+     * */
     void exchange::restart(){
         require_auth( _self );
 
