@@ -106,12 +106,6 @@ namespace etb {
                     market->quote.contract, N(transfer),
                     std::make_tuple(payer, fee_account, fee, std::string("send EOS fee to fee_account"))
             ).send();
-
-        }
-
-        if(market->fee_rate > 0){//交易所手续费
-            auto market_fee = calcfee(eos_quant, market->fee_rate);
-            quant_after_fee -= market_fee;
         }
 
         eosio_assert( quant_after_fee.amount > 0, "quant_after_fee must a positive amount" );
@@ -122,10 +116,20 @@ namespace etb {
                 std::make_tuple(payer, market->exchange_account, quant_after_fee, std::string("send EOS to ET"))
         ).send();
 
+        asset market_fee{0, eos_quant.symbol};
+        if(market->fee_rate > 0){//减去交易所手续费
+            market_fee = calcfee(eos_quant, market->fee_rate);
+            quant_after_fee -= market_fee;
+            eosio_assert( quant_after_fee.amount > 0, "quant_after_fee2 must a positive amount " );
+        }
+
+        print("\nquant_after_fee:");
+        quant_after_fee.print();
 
         asset token_out{0,token_symbol};
         _market.modify( *market, 0, [&]( auto& es ) {
             token_out = es.convert( quant_after_fee,  token_symbol);
+            es.quote.balance += market_fee;
         });
         eosio_assert( token_out.amount > 0, "must reserve a positive amount" );
 
@@ -165,31 +169,36 @@ namespace etb {
             auto fee = calcfee(quant, fee_rate);
             quant_after_fee -= fee;
 
-            action(//向小费账户转入EOS手续费
+            action(//向小费账户转入token手续费
                     permission_level{ receiver, N(active) },
                     market->base.contract, N(transfer),
                     std::make_tuple(receiver, fee_account, fee, std::string("send token fee to fee_account") )
             ).send();
         }
 
-        if(market->fee_rate > 0){//交易所手续费
-            auto market_fee = calcfee(quant, market->fee_rate);
-            quant_after_fee -= market_fee;
-        }
-
-
-        asset tokens_out{0,market->quote.balance.symbol};
-        _market.modify( *market, 0, [&]( auto& es ) {
-            tokens_out = es.convert( quant_after_fee, market->quote.balance.symbol);
-        });
-
-        eosio_assert( tokens_out.amount > 0, "token amount received from selling EOS is too low" );
-
         action(//向交易所账户转入代币
                 permission_level{ receiver, N(active) },
                 market->base.contract, N(transfer),
                 std::make_tuple(receiver, market->exchange_account, quant_after_fee, std::string("send token to ET") )
         ).send();
+
+        asset market_fee{0, quant.symbol};
+        if(market->fee_rate > 0){//交易所手续费
+            market_fee = calcfee(quant, market->fee_rate);
+            quant_after_fee -= market_fee;
+            eosio_assert( quant_after_fee.amount > 0, "quant_after_fee must a positive amount" );
+        }
+
+        print("\nquant_after_fee:");
+        quant_after_fee.print();
+
+        asset tokens_out{0,market->quote.balance.symbol};
+        _market.modify( *market, 0, [&]( auto& es ) {
+            tokens_out = es.convert( quant_after_fee, market->quote.balance.symbol);
+            es.base.balance += market_fee;
+        });
+
+        eosio_assert( tokens_out.amount > 0, "token amount received from selling EOS is too low" );
 
         action(//交易所账户转出EOS
                 permission_level{ market->exchange_account, N(active) },
@@ -227,12 +236,11 @@ namespace etb {
             eosio_assert(shareholder!=idx_shareholders.end(),"token market does not exist");
             std::map<account_name, asset> map1 = shareholder->map_acc_eos;
 
-            double quote=market->quote.balance.amount, amount_tmp;
+            double quote=market->quote.balance.amount;
             for(auto itr = map1.begin(); itr != map1.end(); itr++){
                 itr->second.print();
                 market->quote.balance.print();
 
-                amount_tmp = itr->second.amount;
                 itr->second.amount = quote * itr->second.amount / shareholder->total_quant.amount;
                 eosio_assert(itr->second.amount>0 && itr->second.amount<=quote, "division overflow");
             }
