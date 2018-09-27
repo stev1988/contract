@@ -48,6 +48,8 @@ namespace etb {
         void restart();
 
 
+    private:
+        asset calcfee(asset quant, uint64_t fee_rate);
     };
 
 }

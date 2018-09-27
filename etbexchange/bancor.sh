@@ -166,10 +166,22 @@ cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 push actio
 
 cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 push action etbexchanger restart '[]' -p etbexchanger 
 
+cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 push action etbexchanger setparam '["etbexchange1","4,ETB","fee_rate","5"]' -p etbexchanger 
 
 
 
 cleos --wallet-url http://localhost:6666 --url http://localhost:8000  push action etbexchanger buytoken '["user11111111", "1000000.0000 EOS", "etbexchange1","4,ETB", "feeaccount", "5"]' -p user11111111
+
+cleos --wallet-url http://localhost:6666 --url http://localhost:8000  push action etbexchanger selltoken '["user11111111", "etbexchange1","10000.0000 ETB", "feeaccount", "5" ]' -p user11111111
+
+cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  get table etbexchanger etbexchanger markets
+
+cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  get table etbexchanger etbexchanger shareholders
+
+cleos --wallet-url http://localhost:4444 --url http://localhost:8000  push action etbexchanger addtoken '["user11111111", "10.0000 EOS", "issuerkeyacc","4,KEY"]' -p user11111111
+
+cleos --wallet-url http://localhost:6666 --url http://localhost:8000  push action etbexchanger buytoken '["user11111111", "1000000.0000 EOS", "issuerkeyacc","4,KEY", "feeaccount", "0"]' -p user11111111
+
 
 cleos --wallet-url http://localhost:6666 --url http://localhost:8000  get currency balance eosio.token user11111111
 cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 get currency balance etbexchange1 user11111111
@@ -206,7 +218,7 @@ cleos --wallet-url http://localhost:6666 --url http://localhost:8000  push actio
 
 cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  get table etbexchanger etbexchanger markets
 
-exit
+
 
 cleos --wallet-url http://localhost:6666 --url http://localhost:8000  push action etbexchanger selltoken '["user11111111","etbexchange1", "100000.0000 ETB", "feeaccount", "0"]' -p user11111111
 
@@ -214,29 +226,9 @@ cleos --wallet-url http://localhost:4444 --url http://localhost:8000  push actio
 
 cleos --wallet-url http://localhost:4444 --url http://localhost:8000  push action etbexchanger subtoken '["etbexchanger", "10.0000 EOS","etbexchange1", "4,ETB"]' -p etbexchanger
 
-#cleos  --wallet-url http://localhost:6666 --url http://localhost:8000  set account permission user11111111 active '{"threshold": 2,"keys": [{"key": "EOS7nnGJ7Ra911dwR1rQFw2MD2M8RkRPzUBtYb3qBmuYfaxbkUWmd","weight": 2}],"accounts": [{"permission":{"actor":"eosio","permission":"active"},"weight":1},{"permission":{"actor":"etbexchange1","permission":"eosio.code"},"weight":1}]}' owner -p user11111111
-
-
-#cleos --wallet-url http://127.0.0.1:6666  --url http://localhost:8000 push action eosio updateauth '{"account": "user11111111", "auth": {"threshold": 1, "keys": [{"key": "EOS7nnGJ7Ra911dwR1rQFw2MD2M8RkRPzUBtYb3qBmuYfaxbkUWmd","weight": 1}], "accounts": [], "waits": []}, "parent": "", "permission": "owner"}' -p user11111111@owner
-
-#cleos --wallet-url http://127.0.0.1:6666  --url http://localhost:8000 push action eosio updateauth '{"account": "user11111111", "auth": {"threshold": 1, "keys":# [{"key": "EOS7nnGJ7Ra911dwR1rQFw2MD2M8RkRPzUBtYb3qBmuYfaxbkUWmd","weight": 1}], "accounts": [], "waits": []}, "parent": "owner", "permission": "active"}' -p user11111111
-
-
-#../eos/build/programs/cleos/cleos --wallet-url http://localhost:6666 --url http://localhost:8000 push action eosio updateauth '{"account": "eosio", "auth": {"threshold": 1, "keys": [], "accounts": [{"weight": 1, "permission": {"actor": "eosio.prods", "permission": "active"}}], "waits": []}, "parent": "owner", "permission": "active"}' -p eosio@active
-
-#部署合约需要338.435KB
-
-
-#cleos  --wallet-url http://localhost:6666 --url http://localhost:8000  set account permission user11111111 active '{"threshold": 2,"keys": [{"key": "EOS4uTrdpbTT8kenKuvkXWhnNbLhU5KCccf1u6WphSKyHgBfgn3yG","weight": 1},{"key": "EOS7nnGJ7Ra911dwR1rQFw2MD2M8RkRPzUBtYb3qBmuYfaxbkUWmd","weight": 1}],"accounts": [{"permission":{"actor":"etbexchange1","permission":"eosio.code"},"weight":1},{"permission":{"actor":"user22222222","permission":"active"},"weight":1}]}' owner -p user11111111
-
-
-#cleos  --wallet-url http://localhost:6666 --url http://localhost:8000  set account permission eosio.token active '{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"eosio","permission":"active"},"weight":1},{"permission":{"actor":"etbexchange1","permission":"active"},"weight":1}]}' owner -p eosio.active
 
 
 
-#cleos  --wallet-url http://localhost:4444 --url http://localhost:8000  set account permission etbexchange1 active '{"threshold": 1,"keys": [{"key": "EOS7hB21d8HzVEwV4EF984J1fjGYJw7CfNhuCAtfpSu729xAtkytt","weight": 1}],"accounts": [{"permission":{"actor":"etbexchange1","permission":"eosio.code"},"weight":1}]}' owner -p etbexchange1
-
-exit
 cleos  --wallet-url http://localhost:4444 --url http://localhost:8000  set account permission etbexchanger owner '{"threshold": 2,"keys": [],"accounts": [{"permission":{"actor":"etbexchange1","permission":"owner"},"weight":1},{"permission":{"actor":"etbexchange2","permission":"owner"},"weight":1}]}' -p etbexchanger@owner
 
 cleos  --wallet-url http://localhost:4444 --url http://localhost:8000  set account permission etbexchanger active '{"threshold": 2,"keys": [],"accounts": [{"permission":{"actor":"etbexchange1","permission":"owner"},"weight":1},{"permission":{"actor":"etbexchange2","permission":"owner"},"weight":1}]}' owner -p etbexchanger
@@ -314,4 +306,5 @@ cleos  --wallet-url http://localhost:6666 --url http://localhost:8000  set accou
 
 
 
+49987.4968 ETB
 

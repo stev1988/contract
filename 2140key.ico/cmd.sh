@@ -8,15 +8,15 @@ cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 set contra
 cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  push action etbexchanger pause '[]' -p etbexchanger
 cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  get table etbexchanger etbexchanger markets
 
-eosiocpp -o /home/root1/work/eos/contracts/etbexchange/etbexchange.wast  /home/root1/work/eos/contracts/etbexchange/etbexchange.cpp /home/root1/work/eos/contracts/etbexchange/exchange_state.cpp
-eosiocpp -g /home/root1/work/eos/contracts/etbexchange/etbexchange.api  /home/root1/work/eos/contracts/etbexchange/etbexchange.cpp
-cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 set contract etbexchanger /home/root1/work/eos/contracts/etbexchange -p etbexchanger
+eosiocpp -o /home/root1/work/contract/etbexchange/etbexchange.wast  /home/root1/work/contract/etbexchange/etbexchange.cpp /home/root1/work/contract/etbexchange/exchange_state.cpp
+eosiocpp -g /home/root1/work/contract/etbexchange/etbexchange.api /home/root1/work/contract/etbexchange/etbexchange.cpp
+cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 set contract etbexchanger /home/root1/work/contract/etbexchange -p etbexchanger
 cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 push action etbexchanger restart '[]' -p etbexchanger 
 cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  get table etbexchanger etbexchanger markets
 
 
-eosiocpp -o /home/root1/work/eos/contracts/2140key.ico/2140key.ico.wast  /home/root1/work/eos/contracts/2140key.ico/2140key.ico.cpp 
-eosiocpp -g /home/root1/work/eos/contracts/2140key.ico/2140key.ico.api  /home/root1/work/eos/contracts/2140key.ico/2140key.ico.cpp
+eosiocpp -o /home/root1/work/contract/2140key.ico/2140key.ico.wast  /home/root1/work/contract/2140key.ico/2140key.ico.cpp 
+eosiocpp -g /home/root1/work/contract/2140key.ico/2140key.ico.api  /home/root1/work/contract/2140key.ico/2140key.ico.cpp
 
 #cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 set contract  issuerkeyacc /home/root1/work/eos/contracts/2140key.ico -p  issuerkeyacc
 
@@ -99,7 +99,7 @@ cleos  --wallet-url http://localhost:6666   --url http://localhost:8000 system n
 
 
 
-cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 set contract  issuerkeyacc /home/root1/work/eos/contracts/2140key.ico -p  issuerkeyacc
+cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 set contract  issuerkeyacc /home/root1/work/contract/2140key.ico -p  issuerkeyacc
 
 cleos  --wallet-url http://127.0.0.1:4444  --url http://localhost:8000 push action  issuerkeyacc create '["issuerkeyacc", "1000000.0000 KEY", 0, 0, 0]' -p  issuerkeyacc
 
@@ -125,7 +125,7 @@ cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 get curren
 cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 get currency balance  issuerkeyacc etbexchanger
 cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 get currency balance  issuerkeyacc  etbexchange5
 
-
+exit
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user11111111", "issuerkeyacc","150000.0000 EOS","buykey:"]' -p user11111111
 
 
@@ -156,6 +156,8 @@ cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 push actio
 cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 push action etbexchanger setparam '["issuerkeyacc","4,KEY","base_weight","20/1"]' -p etbexchanger
 
 cleos  --wallet-url http://127.0.0.1:4444 --url http://localhost:8000 push action etbexchanger setparam '["issuerkeyacc","4,KEY","quote_weight","1/20"]' -p etbexchanger
+
+cleos --wallet-url http://127.0.0.1:4444 --url http://localhost:8000  get table etbexchanger etbexchanger markets
 exit
 
 cleos --wallet-url http://localhost:6666 --url http://localhost:8000  push action etbexchanger buytoken '["user22222222", "1.0000 EOS","issuerkeyacc", "4,KEY", "feeaccount", "0"]' -p user22222222
