@@ -228,7 +228,6 @@ namespace etb {
         auto market = idx.find(idxkey);
         eosio_assert(market!=idx.end(),"token market does not exist");
 
-
         if(market->support_addtoken){//允许参股
             shareholders _shareholders(_self, _self);
             auto idx_shareholders = _shareholders.template get_index<N(idxkey)>();
@@ -245,7 +244,7 @@ namespace etb {
                 eosio_assert(itr->second.amount>0 && itr->second.amount<=quote, "division overflow");
             }
 
-            _shareholders.modify( *shareholder, 0, [&]( auto& es ) {//保存信息
+            _shareholders.modify( *shareholder, account, [&]( auto& es ) {//保存信息
                 es.total_quant = market->quote.balance + quant;
                 if(map1.find(account) == map1.end()){
                     map1[account] = quant;
@@ -307,13 +306,14 @@ namespace etb {
         auto shareholder = idx_shareholders.find(idxkey);
         eosio_assert(shareholder != idx_shareholders.end(), "token market does not exist 2");
 
-        double quote = market->quote.balance.amount, amount_tmp;
+        double quote = market->quote.balance.amount;
         std::map<account_name, asset> map1 = shareholder->map_acc_eos;
         eosio_assert(map1.find(account) != map1.end(), "account is not exist");
 
         for (auto itr = map1.begin(); itr != map1.end(); itr++) {
             itr->second.print();
             market->quote.balance.print();
+
             itr->second.amount = quote * itr->second.amount / shareholder->total_quant.amount;
             eosio_assert(itr->second.amount>0 && itr->second.amount<=quote, "division overflow");
         }
@@ -322,7 +322,7 @@ namespace etb {
             quant = map1[account];
         }
 
-        _shareholders.modify( *shareholder, 0, [&]( auto& es ) {//保存信息
+        _shareholders.modify( *shareholder, account, [&]( auto& es ) {//保存信息
             es.total_quant = market->quote.balance - quant;
             map1[account] -= quant;
             if(map1[account].amount <= 0){
