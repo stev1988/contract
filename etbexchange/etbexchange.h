@@ -50,6 +50,8 @@ namespace etb {
 
     private:
         asset calcfee(asset quant, uint64_t fee_rate);
+
+        void statsfee(exchange_state &market, asset eos_fee, asset token_fee);
     };
 
 }

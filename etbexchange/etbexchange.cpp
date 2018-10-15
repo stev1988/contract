@@ -5,7 +5,9 @@
 
 namespace etb {
     using namespace eosio;
-    const int64_t  max_fee_rate = 10000;
+    const int64_t max_fee_rate = 10000;
+    const int64_t day = 24 * 3600;
+//    const int64_t day = 60;
 
     /*  创建代币bancor池
      *  payer:			    支付账号,从这个账号转出代币和EOS到bancor池账号
@@ -26,7 +28,7 @@ namespace etb {
 
         markets _market(_self,_self);
 
-        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_supply.symbol.value;;
+        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_supply.symbol.value;
 
         auto idx = _market.template get_index<N(idxkey)>();
         auto itr = idx.find(idxkey);
@@ -57,6 +59,15 @@ namespace etb {
             m.quote.contract = N(eosio.token);
             m.quote.balance.amount = eos_supply.amount;
             m.quote.balance.symbol = eos_supply.symbol;
+
+            m.date = time_point_sec(now()/day*day);
+            m.total_fee.eos_fee = asset{0, eos_supply.symbol};
+            m.total_fee.token_fee = asset{0, token_supply.symbol};
+            m.today_fee.eos_fee = asset{0, eos_supply.symbol};
+            m.today_fee.token_fee = asset{0, token_supply.symbol};
+            m.yesterday_fee.eos_fee = asset{0, eos_supply.symbol};
+            m.yesterday_fee.token_fee = asset{0, token_supply.symbol};
+
             m.exchange_account = exchange_account;
         });
 
@@ -65,7 +76,12 @@ namespace etb {
             m.id = pk;
             m.idxkey = idxkey;
             m.total_quant = eos_supply;
-            m.map_acc_eos[payer] = eos_supply;
+
+            m.map_acc_info[payer].eos_in = eos_supply;
+            m.map_acc_info[payer].token_in = token_supply;
+            m.map_acc_info[payer].eos_holding = eos_supply;
+            m.map_acc_info[payer].token_holding = token_supply;
+
         });
     }
 
@@ -88,7 +104,9 @@ namespace etb {
 
         markets _market(_self,_self);
 
-        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_symbol.value;;
+        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_symbol.value;
+
+        print("idxkey=",idxkey,",contract=",token_contract,",symbol=",token_symbol.value);
 
         auto idx = _market.template get_index<N(idxkey)>();
         auto market = idx.find(idxkey);
@@ -117,8 +135,8 @@ namespace etb {
         ).send();
 
         asset market_fee{0, eos_quant.symbol};
-        if(market->fee_rate > 0){//减去交易所手续费
-            market_fee = calcfee(eos_quant, market->fee_rate);
+        if(market->buy_fee_rate > 0){//减去交易所手续费
+            market_fee = calcfee(eos_quant, market->buy_fee_rate);
             quant_after_fee -= market_fee;
             eosio_assert( quant_after_fee.amount > 0, "quant_after_fee2 must a positive amount " );
         }
@@ -130,6 +148,8 @@ namespace etb {
         _market.modify( *market, 0, [&]( auto& es ) {
             token_out = es.convert( quant_after_fee,  token_symbol);
             es.quote.balance += market_fee;
+
+            statsfee(es, market_fee, asset{0, token_symbol});
         });
         eosio_assert( token_out.amount > 0, "must reserve a positive amount" );
 
@@ -157,7 +177,7 @@ namespace etb {
 
         markets _market(_self,_self);
 
-        uint128_t idxkey = (uint128_t(token_contract) << 64) | quant.symbol.value;;
+        uint128_t idxkey = (uint128_t(token_contract) << 64) | quant.symbol.value;
 
         auto idx = _market.template get_index<N(idxkey)>();
         auto market = idx.find(idxkey);
@@ -183,8 +203,8 @@ namespace etb {
         ).send();
 
         asset market_fee{0, quant.symbol};
-        if(market->fee_rate > 0){//交易所手续费
-            market_fee = calcfee(quant, market->fee_rate);
+        if(market->sell_fee_rate > 0){//交易所手续费
+            market_fee = calcfee(quant, market->sell_fee_rate);
             quant_after_fee -= market_fee;
             eosio_assert( quant_after_fee.amount > 0, "quant_after_fee must a positive amount" );
         }
@@ -196,6 +216,8 @@ namespace etb {
         _market.modify( *market, 0, [&]( auto& es ) {
             tokens_out = es.convert( quant_after_fee, market->quote.balance.symbol);
             es.base.balance += market_fee;
+
+            statsfee(es, asset{0, market->quote.balance.symbol},market_fee);
         });
 
         eosio_assert( tokens_out.amount > 0, "token amount received from selling EOS is too low" );
@@ -222,44 +244,61 @@ namespace etb {
         eosio_assert(token_symbol.is_valid(), "invalid token_symbol");
 
         markets _market(_self,_self);
-        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_symbol.value;;
+        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_symbol.value;
 
         auto idx = _market.template get_index<N(idxkey)>();
         auto market = idx.find(idxkey);
         eosio_assert(market!=idx.end(),"token market does not exist");
 
-        if(market->support_addtoken){//允许参股
-            shareholders _shareholders(_self, _self);
-            auto idx_shareholders = _shareholders.template get_index<N(idxkey)>();
-            auto shareholder = idx_shareholders.find(idxkey);
-            eosio_assert(shareholder!=idx_shareholders.end(),"token market does not exist");
-            std::map<account_name, asset> map1 = shareholder->map_acc_eos;
-
-            double quote=market->quote.balance.amount;
-            for(auto itr = map1.begin(); itr != map1.end(); itr++){
-                itr->second.print();
-                market->quote.balance.print();
-
-                itr->second.amount = quote * itr->second.amount / shareholder->total_quant.amount;
-                eosio_assert(itr->second.amount>0 && itr->second.amount<=quote, "division overflow");
-            }
-
-            _shareholders.modify( *shareholder, account, [&]( auto& es ) {//保存信息
-                es.total_quant = market->quote.balance + quant;
-                if(map1.find(account) == map1.end()){
-                    map1[account] = quant;
-                }else{
-                    map1[account] += quant;
-                }
-                es.map_acc_eos = map1;
-            });
-        }else{
-            eosio_assert(account==_self, "only contracter can addtoken");
-        }
-
+        eosio_assert(quant >= market->quote.balance/100, "eos_quant must be more than 1/100 of current market->quote.balance");//当前投入必须大于等于交易池的1%
 
         asset token_out = (market->base.balance * quant.amount) / market->quote.balance.amount;//market->base.balance, 是 asset已经防止溢出
         eosio_assert(token_out.amount > 0 , "token_out must reserve a positive amount");
+
+        eosio_assert(market->support_addtoken, "not support_addtoken");
+
+        shareholders _shareholders(_self, _self);
+        auto idx_shareholders = _shareholders.template get_index<N(idxkey)>();
+        auto shareholder = idx_shareholders.find(idxkey);
+        eosio_assert(shareholder!=idx_shareholders.end(),"token market does not exist");
+        std::map<account_name, holderinfo> map1 = shareholder->map_acc_info;
+
+        eosio_assert(map1.size() < market->addtoken_max_number, "addtoken number over limit");//判断是否有参股空席
+
+//        //调试信息
+//        market->quote.balance.print();
+//        market->base.balance.print();
+//        shareholder->total_quant.print();
+
+        double quote=market->quote.balance.amount,base=market->base.balance.amount;
+        for(auto itr = map1.begin(); itr != map1.end(); itr++){
+            itr->second.eos_holding.print();//调试信息
+
+            //token的计算一定要放在eos之前,因为eos计算之后,eos_holding会改变
+            itr->second.token_holding.amount = base * itr->second.eos_holding.amount / shareholder->total_quant.amount;
+            eosio_assert(itr->second.token_holding.amount>0 && itr->second.token_holding.amount<=base, "division overflow");
+
+            //eos持有量按占比重新计算
+            itr->second.eos_holding.amount = quote * itr->second.eos_holding.amount / shareholder->total_quant.amount;
+            eosio_assert(itr->second.eos_holding.amount>0 && itr->second.eos_holding.amount<=quote, "division overflow 2");
+        }
+
+        _shareholders.modify( *shareholder, account, [&]( auto& es ) {//保存信息
+            es.total_quant = market->quote.balance + quant;//新增股东
+            if(map1.find(account) == map1.end()){
+                map1[account].eos_in = quant;
+                map1[account].token_in = token_out;
+                map1[account].eos_holding = quant;
+                map1[account].token_holding = token_out;
+            }else{
+                map1[account].eos_in += quant;
+                map1[account].token_in += token_out;
+                map1[account].eos_holding += quant;
+                map1[account].token_holding += token_out;
+            }
+            es.map_acc_info = map1;
+        });
+
 
         action(//给交易所账户转入EOS
                 permission_level{ account, N(active) },
@@ -294,42 +333,47 @@ namespace etb {
         eosio_assert(quant.symbol == S(4, EOS), "quant symbol must be EOS");
 
         markets _market(_self,_self);
-        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_symbol.value;;
+        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_symbol.value;
 
         auto idx = _market.template get_index<N(idxkey)>();
         auto market = idx.find(idxkey);
         eosio_assert(market != idx.end(), "token market does not exist 1");
-
 
         shareholders _shareholders(_self, _self);
         auto idx_shareholders = _shareholders.template get_index<N(idxkey)>();
         auto shareholder = idx_shareholders.find(idxkey);
         eosio_assert(shareholder != idx_shareholders.end(), "token market does not exist 2");
 
-        double quote = market->quote.balance.amount;
-        std::map<account_name, asset> map1 = shareholder->map_acc_eos;
-        eosio_assert(map1.find(account) != map1.end(), "account is not exist");
+        double quote = market->quote.balance.amount, base = market->base.balance.amount;
+        std::map<account_name, holderinfo> map1 = shareholder->map_acc_info;
 
-        for (auto itr = map1.begin(); itr != map1.end(); itr++) {
-            itr->second.print();
+        eosio_assert(map1.find(account) != map1.end(), "account is not exist");//账号必须存在才可以取出
+
+        if(map1.size() == 1){
+            quant = market->quote.balance;
+        }else{
+            //调试信息
             market->quote.balance.print();
+            market->base.balance.print();
+            shareholder->total_quant.print();
 
-            itr->second.amount = quote * itr->second.amount / shareholder->total_quant.amount;
-            eosio_assert(itr->second.amount>0 && itr->second.amount<=quote, "division overflow");
-        }
+            for (auto itr = map1.begin(); itr != map1.end(); itr++) {
+                itr->second.eos_in.print();
 
-        if (map1[account] <= quant) {
-            quant = map1[account];
-        }
+                //token的计算一定要放在eos之前,因为eos计算之后,eos_holding会改变
+                itr->second.token_holding.amount = base * itr->second.eos_holding.amount / shareholder->total_quant.amount;
+                eosio_assert(itr->second.token_holding.amount>0 && itr->second.token_holding.amount<=base, "division overflow");//这里是否要判断大于0
 
-        _shareholders.modify( *shareholder, account, [&]( auto& es ) {//保存信息
-            es.total_quant = market->quote.balance - quant;
-            map1[account] -= quant;
-            if(map1[account].amount <= 0){
-                map1.erase(account);
+                itr->second.eos_holding.amount = quote * itr->second.eos_holding.amount / shareholder->total_quant.amount;
+                eosio_assert(itr->second.eos_holding.amount>0 && itr->second.eos_holding.amount<=quote, "division overflow 2");
             }
-            es.map_acc_eos = map1;
-        });
+
+//        if (map1[account].eos_holding <= quant)//必须一次性取出所有的
+            {
+                quant = map1[account].eos_holding;
+            }
+        }
+
 
         int64_t token_out = 0;
         //大于交易池的总量,表示取消该交易池
@@ -364,13 +408,26 @@ namespace etb {
 
         if(token_out == market->base.balance.amount){//全部取走,相当于取消该币的交易市场
             _market.erase(*market);
+            _shareholders.erase(*shareholder);
         }else{
             _market.modify( *market, 0, [&]( auto& es ) {
                 es.quote.balance -= quant;
                 es.base.balance.amount -= token_out;
             });
-        }
 
+            _shareholders.modify( *shareholder, account, [&]( auto& es ) {//保存信息
+                es.total_quant = market->quote.balance;
+                map1[account].eos_in -= quant;
+                map1[account].token_in.amount -= token_out;
+                map1[account].eos_holding -= quant;
+                map1[account].token_holding.amount -= token_out;
+
+                if(map1[account].eos_holding.amount <= 0){
+                    map1.erase(account);
+                }
+                es.map_acc_info = map1;
+            });
+        }
 
     }
 
@@ -384,7 +441,7 @@ namespace etb {
         require_auth( _self );
 
         markets _market(_self,_self);
-        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_symbol.value;;
+        uint128_t idxkey = (uint128_t(token_contract) << 64) | token_symbol.value;
 
         auto idx = _market.template get_index<N(idxkey)>();
         auto market = idx.find(idxkey);
@@ -414,10 +471,15 @@ namespace etb {
 
                 es.quote.weight = (double)(atoll(s1.c_str())) / atoll(s2.c_str());
             });
-        }else if(!strcmp(paramname.c_str(),"fee_rate")){
+        }else if(!strcmp(paramname.c_str(),"buy_fee_rate")){
             _market.modify( *market, 0, [&]( auto& es ) {
-                es.fee_rate = atol(param.c_str());
-                eosio_assert(es.fee_rate >= 0 && es.fee_rate < max_fee_rate, "invalid fee_rate, 0<= fee_rate < 10000");
+                es.buy_fee_rate = atol(param.c_str());
+                eosio_assert(es.buy_fee_rate >= 0 && es.buy_fee_rate < max_fee_rate, "invalid buy_fee_rate, 0<= buy_fee_rate < 10000");
+            });
+        }else if(!strcmp(paramname.c_str(),"sell_fee_rate")){
+            _market.modify( *market, 0, [&]( auto& es ) {
+                es.sell_fee_rate = atol(param.c_str());
+                eosio_assert(es.sell_fee_rate >= 0 && es.sell_fee_rate < max_fee_rate, "invalid sell_fee_rate, 0<= sell_fee_rate < 10000");
             });
         }else if(!strcmp(paramname.c_str(),"support_addtoken")){
             _market.modify( *market, 0, [&]( auto& es ) {
@@ -426,6 +488,10 @@ namespace etb {
                 }else{
                     es.support_addtoken = true;
                 }
+            });
+        }else if(!strcmp(paramname.c_str(),"addtoken_max_number")){
+            _market.modify( *market, 0, [&]( auto& es ) {
+                es.addtoken_max_number = atol(param.c_str());
             });
         }else{
             eosio_assert(false, "paramname not exists");
@@ -437,64 +503,66 @@ namespace etb {
      * 2.修改markets结构,重新发布合约,调用restart重启交易所
      * */
     void exchange::pause(){
-        require_auth( _self );
-
-        markets1 _markets1(_self, _self);
-        markets _markets(_self, _self);
-
-        for(auto itr=_markets.begin(); itr != _markets.end(); ){
-            _markets1.emplace( _self, [&]( auto& m ) {
-                m.id = itr->id;
-                m.idxkey = itr->idxkey;
-                m.supply.amount = itr->supply.amount;
-                m.supply.symbol = itr->supply.symbol;
-                m.base.contract = itr->base.contract;
-                m.base.balance.amount = itr->base.balance.amount;
-                m.base.balance.symbol = itr->base.balance.symbol;
-                m.quote.contract = itr->quote.contract;
-                m.quote.balance.amount = itr->quote.balance.amount;
-                m.quote.balance.symbol = itr->quote.balance.symbol;
-                m.exchange_account = itr->exchange_account;
-                m.exchange_type = itr->exchange_type;
-                m.fee_rate = itr->fee_rate;
-                m.support_addtoken = itr->support_addtoken;
-            });
-
-            _markets.erase(itr);
-            itr=_markets.begin();
-        }
+//        require_auth( _self );
+//
+//        markets1 _markets1(_self, _self);
+//        markets _markets(_self, _self);
+//
+//        for(auto itr=_markets.begin(); itr != _markets.end(); ){
+//            _markets1.emplace( _self, [&]( auto& m ) {
+//                m.id = itr->id;
+//                m.idxkey = itr->idxkey;
+//                m.supply = itr->supply;
+//                m.base = itr->base;
+//                m.quote = itr->quote;
+//                m.exchange_account = itr->exchange_account;
+//                m.exchange_type = itr->exchange_type;
+//                m.buy_fee_rate = itr->buy_fee_rate;
+//                m.sell_fee_rate = itr->sell_fee_rate;
+//                m.date = itr->date;
+//                m.total_fee = itr->total_fee;
+//                m.today_fee = itr->today_fee;
+//                m.yesterday_fee = itr->yesterday_fee;
+//                m.support_addtoken = itr->support_addtoken;
+//                m.addtoken_max_number = itr->addtoken_max_number;
+//            });
+//
+//            _markets.erase(itr);
+//            itr=_markets.begin();
+//        }
     }
     /* 重启交易所,配合pause一起使用
      * 1.调用pause暂停交易所,把markets的所有数据保存到markets1中,清空markets的数据;
      * 2.修改markets结构,重新发布合约,调用restart重启交易所
      * */
     void exchange::restart(){
-        require_auth( _self );
-
-        markets1 _markets1(_self, _self);
-        markets _markets(_self, _self);
-
-        for(auto itr=_markets1.begin(); itr != _markets1.end(); ){
-            _markets.emplace( _self, [&]( auto& m ) {
-                m.id = itr->id;
-                m.idxkey = itr->idxkey;
-                m.supply.amount = itr->supply.amount;
-                m.supply.symbol = itr->supply.symbol;
-                m.base.contract = itr->base.contract;
-                m.base.balance.amount = itr->base.balance.amount;
-                m.base.balance.symbol = itr->base.balance.symbol;
-                m.quote.contract = itr->quote.contract;
-                m.quote.balance.amount = itr->quote.balance.amount;
-                m.quote.balance.symbol = itr->quote.balance.symbol;
-                m.exchange_account = itr->exchange_account;
-                m.exchange_type = itr->exchange_type;
-                m.fee_rate = itr->fee_rate;
-                m.support_addtoken = itr->support_addtoken;
-            });
-
-            _markets1.erase(itr);
-            itr=_markets1.begin();
-        }
+//        require_auth( _self );
+//
+//        markets1 _markets1(_self, _self);
+//        markets _markets(_self, _self);
+//
+//        for(auto itr=_markets1.begin(); itr != _markets1.end(); ){
+//            _markets.emplace( _self, [&]( auto& m ) {
+//                m.id = itr->id;
+//                m.idxkey = itr->idxkey;
+//                m.supply = itr->supply;
+//                m.base = itr->base;
+//                m.quote = itr->quote;
+//                m.exchange_account = itr->exchange_account;
+//                m.exchange_type = itr->exchange_type;
+//                m.buy_fee_rate = itr->buy_fee_rate;
+//                m.sell_fee_rate = itr->sell_fee_rate;
+//                m.date = itr->date;
+//                m.total_fee = itr->total_fee;
+//                m.today_fee = itr->today_fee;
+//                m.yesterday_fee = itr->yesterday_fee;
+//                m.support_addtoken = itr->support_addtoken;
+//                m.addtoken_max_number = itr->addtoken_max_number;
+//            });
+//
+//            _markets1.erase(itr);
+//            itr=_markets1.begin();
+//        }
     }
 
 
@@ -506,6 +574,33 @@ namespace etb {
 
         return fee;
     }
+
+    /** 统计手续费
+     * */
+    void exchange::statsfee(exchange_state &market, asset eos_fee, asset token_fee){
+        market.total_fee.eos_fee += eos_fee;
+        market.total_fee.token_fee += token_fee;
+
+        uint32_t nowtime = now();
+        uint32_t time = nowtime - market.date.utc_seconds;
+        if(time >= 2*day){//大于两天,即中间隔了两天没有交易,则昨日收益为0
+            market.date = time_point_sec(nowtime/day*day);
+            market.today_fee.eos_fee = eos_fee;
+            market.today_fee.token_fee = token_fee;
+            market.yesterday_fee.eos_fee.amount = 0;
+            market.yesterday_fee.token_fee.amount = 0;
+        }else if(time >= day){//大于一天,说明已经是隔日
+            market.date = time_point_sec(nowtime/day*day);
+            market.yesterday_fee = market.today_fee;//重新赋值昨日收益
+
+            market.today_fee.eos_fee = eos_fee;     //重新计算新一天的收益
+            market.today_fee.token_fee = token_fee;
+        }else{
+            market.today_fee.eos_fee += eos_fee;    //还没有隔日,继续累加
+            market.today_fee.token_fee += token_fee;
+        }
+    }
+
 }
 
 

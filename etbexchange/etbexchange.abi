@@ -11,7 +11,7 @@
       "fields": [
       {"name": "payer","type": "account_name"},
       {"name": "exchange_account","type": "account_name"},
-      {"name": "eos_supply","type": "asset"}
+      {"name": "eos_supply","type": "asset"},
       {"name": "token_contract","type": "account_name"},
       {"name": "token_supply","type": "asset"},
       ]
@@ -81,6 +81,13 @@
       {"name":"weight", "type":"float64"},
     ]
     },{
+      "name": "earnings",
+      "base": "",
+      "fields": [
+        {"name":"eos_fee", "type":"asset"},
+        {"name":"token_fee", "type":"asset"},
+      ]
+      },{
     "name": "exchange_state",
     "base": "",
     "fields": [
@@ -91,29 +98,51 @@
       {"name":"quote", "type":"connector"},
       {"name":"exchange_account", "type":"account_name"},
       {"name":"exchange_type", "type":"uint64"},
-      {"name":"fee_rate", "type":"uint64"},
+      {"name":"buy_fee_rate", "type":"uint64"},
+      {"name":"sell_fee_rate", "type":"uint64"},
+      {"name":"date", "type":"time_point_sec"},
+      {"name":"total_fee", "type":"earnings"},
+      {"name":"today_fee", "type":"earnings"},
+      {"name":"yesterday_fee", "type":"earnings"},
       {"name":"support_addtoken", "type":"bool"},
+      {"name":"addtoken_max_number", "type":"uint64"},
+
     ]
   },{
        "name": "exchange_state1",
        "base": "",
        "fields": [
-         {"name":"id", "type":"uint64"},
-         {"name":"idxkey", "type":"uint128"},
-         {"name":"supply", "type":"asset"},
-         {"name":"base", "type":"connector"},
-         {"name":"quote", "type":"connector"},
-         {"name":"exchange_account", "type":"account_name"},
-         {"name":"exchange_type", "type":"uint64"},
-         {"name":"fee_rate", "type":"uint64"},
-         {"name":"support_addtoken", "type":"bool"},
-       ]
+        {"name":"id", "type":"uint64"},
+        {"name":"idxkey", "type":"uint128"},
+        {"name":"supply", "type":"asset"},
+        {"name":"base", "type":"connector"},
+        {"name":"quote", "type":"connector"},
+        {"name":"exchange_account", "type":"account_name"},
+        {"name":"exchange_type", "type":"uint64"},
+        {"name":"buy_fee_rate", "type":"uint64"},
+        {"name":"sell_fee_rate", "type":"uint64"},
+        {"name":"date", "type":"time_point_sec"},
+        {"name":"total_fee", "type":"earnings"},
+        {"name":"today_fee", "type":"earnings"},
+        {"name":"yesterday_fee", "type":"earnings"},
+        {"name":"support_addtoken", "type":"bool"},
+        {"name":"addtoken_max_number", "type":"uint64"},
+        ]
      },{
+     "name": "holderinfo",
+     "base": "",
+     "fields": [
+      {"name": "eos_in","type":"asset"},
+      {"name": "token_in","type":"asset"},
+      {"name": "eos_holding","type":"asset"},
+      {"name": "token_holding","type":"asset"},
+     ]
+    },{
        "name": "map_acc_asset",
        "base": "",
        "fields": [
         {"name": "account","type":"name"},
-        {"name": "amount","type": "asset"},
+        {"name": "info","type": "holderinfo"},
        ]
      },{
      "name": "shareholder",
@@ -122,7 +151,7 @@
        {"name":"id", "type":"uint64"},
        {"name":"idxkey", "type":"uint128"},
        {"name":"total_quant", "type":"asset"},
-       {"name":"map_acc_eos", "type":"map_acc_asset[]"},
+       {"name":"map_acc_info", "type":"map_acc_asset[]"},
      ]
    }
   ],
