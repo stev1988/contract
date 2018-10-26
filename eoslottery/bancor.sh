@@ -38,8 +38,9 @@ cleos  --wallet-url http://localhost:6666 --url http://localhost:8000  set accou
 
 cleos --wallet-url http://localhost:6666 --url http://localhost:8000  system newaccount --transfer eosio hashfuncoins EOS7nnGJ7Ra911dwR1rQFw2MD2M8RkRPzUBtYb3qBmuYfaxbkUWmd --stake-net "1000.0000 EOS" --stake-cpu "1000.0000 EOS" --buy-ram "100.0000 EOS"
 cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 set contract hashfuncoins /home/root1/work/eos/contracts/eosio.token -p hashfuncoins
-cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 push action hashfuncoins create '[ "hashfuncoins", "100000000.0000 HFC", 0, 0, 0]' -p hashfuncoins
-cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 push action hashfuncoins issue '[ "user11111111", "100000000.0000 HFC", "memo"]' -p hashfuncoins
+cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 push action hashfuncoins create '[ "hashfuncoins", "1000000000.0000 HFC", 0, 0, 0]' -p hashfuncoins
+#cleos  --wallet-url http://localhost:6666 --url http://localhost:8000 push action hashfuncoins issue '[ "hashfuncoins", "100000000.0000 HFC", "memo"]' -p hashfuncoins
+cleos  --wallet-url http://localhost:6666 --url http://localhost:8000  set account permission hashfuncoins active '{"threshold": 1,"keys": [{"key": "EOS7nnGJ7Ra911dwR1rQFw2MD2M8RkRPzUBtYb3qBmuYfaxbkUWmd","weight": 1}],"accounts": [{"permission":{"actor":"user11111111","permission":"eosio.code"},"weight":1}]}' owner -p hashfuncoins
 exit 
 
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action user11111111 transfer '["user22222222", "user11111111", "1.0000 EOS", "单"]' -p user22222222
@@ -69,7 +70,7 @@ cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push actio
 
 
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user22222222", "user11111111", "100.0000 EOS", "双"]' -p user22222222
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action user11111111 sendresult '[4, "112"]' -p user11111111
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action user11111111 sendresult '[0, "112"]' -p user11111111
 
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action user11111111 stop '[]' -p user11111111
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action user11111111 cleanram '[]' -p user11111111
@@ -83,7 +84,7 @@ cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table 
 
 
 
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get currency balance hashfuncoins user22222222 HFC
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get currency stats hashfuncoins HFC
 
 
 

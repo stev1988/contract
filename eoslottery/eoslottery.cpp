@@ -92,9 +92,9 @@ namespace eoslottery {
 
         //挖矿,EOS:HFC=1:3
         action(//给交易所账户转入EOS
-                permission_level{ _self, N(active) },
-                CONTRACT_HFC, N(transfer),
-                std::make_tuple(_self, from, asset{quantity.amount*3, S(4, HFC)}, std::string("reward HFC to user"))
+                permission_level{ CONTRACT_HFC, N(active) },
+                CONTRACT_HFC, N(issue),
+                std::make_tuple(from, asset{quantity.amount*3, S(4, HFC)}, std::string("reward HFC to user"))
         ).send();
     }
 
