@@ -41,20 +41,21 @@ namespace eoslottery {
         eosio_assert(itr != _gameinfos.end(), "game not exists");
         eosio_assert(itr->stop == false, "game has been stop");//判断该局游戏是否已停止
 
-        const std::map<string, int>map_flag_ratio={{"大",2},{"小",2},{"单",2},{"双",2},{"全围",24},{"4",50},{"5",18},{"6",14},{"7",12},{"8",8},{"9",6},{"10",6},{"11",6},{"12",6},{"13",8},{"14",12},{"15",14},{"16",18},{"17",50}};
-
-        //        eosio_assert(itr->map_acc_info.find(memo) != itr->map_acc_info.end(), "memo message error!");//是否要限制memo的信息
-        if(map_flag_ratio.find(memo) == map_flag_ratio.end()){
-            print("memo invalid\n");
-            return;
-        }
+        std::vector<string>map_flag_ratio = {
+                "小","单","全围","双","大",
+                "1点","2点","3点","4点","5点","6点",
+                "111豹","222豹","333豹","444豹","555豹","666豹",
+                "对1","对2","对3","对4","对5","对6",
+                "4","5","6","7","8","9","10","11","12","13","14","15","16","17",
+                "1+2","1+3","1+4","1+5","1+6","2+3","2+4","2+5","2+6","3+4","3+5","3+6","4+5","4+6","5+6",};
+        eosio_assert(std::find(map_flag_ratio.begin(), map_flag_ratio.end(), memo) != map_flag_ratio.end(), "memo message error!");
 
         _gameinfos.modify( itr, 0, [&]( auto& s ) {
             s.total += quantity;
             eosio_assert(s.total.amount <= max_limit, "over limit");
-            s.map_acc_info[memo].ratio = map_flag_ratio.at(memo);
             insertaccount(s.map_acc_info[memo].map_acc_asset,  from, quantity);
             asset amount{0,S(4,EOS)};
+            //判断该局单人购买限额不超过500EOS
             for(auto item=s.map_acc_info.begin(); item != s.map_acc_info.end(); item++){
                 if(item->second.map_acc_asset.find(from) != item->second.map_acc_asset.end()) {
                     amount += item->second.map_acc_asset[from];
@@ -111,6 +112,31 @@ namespace eoslottery {
         });
     }
 
+    void get_map_luckey(string result, std::map<string, int> &map_luckey_ratio ){
+        //result=“123|单*1|小*1|1点*1|2点*1|3点*1|6*14|1+2*5|1+3*5|2+3*5”
+        auto pos = result.find('|');
+        auto pos1 = 0;
+
+        string data="";
+        string key="";
+        string ratio="";
+        while(pos != string::npos){
+            pos++;
+            pos1 = result.find('|', pos);
+
+            if(pos1 == string::npos){
+                data = result.substr(pos);
+            }else{
+                data = result.substr(pos, pos1-pos);
+            }
+
+            key = data.substr(0, data.find('*'));
+            ratio = data.substr(data.find('*')+1);
+
+            map_luckey_ratio[key] = atoi(ratio.c_str()) + 1;
+            pos = pos1;
+        }
+    }
     void lottery::sendresult( uint64_t gameid, string result){
         require_auth(_self);
         print("\nresult",result);
@@ -125,40 +151,15 @@ namespace eoslottery {
         gameinfo _info = *itr;
 
         //判断结果
-        int num=atoi(result.c_str());
-        eosio_assert(num>=111 && num<=666 && result.length()==3, "result must be >= 111 and <= 666 and length==3");
-        std::vector<string> luckey;
-        const char *data = result.data();
-        if(data[0] == data[1] && data[1] == data[2]){
-            luckey.push_back("全围");
-            result += "|全围";
-        }else{
-            if(num % 2){
-                luckey.push_back("单");
-            }else{
-                luckey.push_back("双");
-            }
-            result += '|' + luckey.back();
-
-            int sum = data[0]-'0' + data[1]-'0' + data[2]-'0';
-            if(sum > 10){
-                luckey.push_back("大");
-            }else{
-                luckey.push_back("小");
-            }
-            result += '|' + luckey.back();
-
-            char s[2];
-            sprintf(s, "%d", sum);
-            luckey.push_back(s);
-            result += '|' + luckey.back();
-        }
+        std::map<string, int> map_luckey_ratio;
+        get_map_luckey(result, map_luckey_ratio);
         print("\nresult:", result, "\n");
+
 
         history _history;
         _history.id = gameid;
         _history.total_bet = _info.total;
-        _history.total_reward = reward(_info, luckey, result);
+        _history.total_reward = reward(_info, map_luckey_ratio, result);
         _history.result = result;
         _history.map_acc_info = _info.map_acc_info;
 
@@ -216,20 +217,24 @@ namespace eoslottery {
 
     /*
      * 开奖
+     * info:游戏信息
+     * map_luckey_ratio：中奖信息
+     * result:中奖结果
      * **/
-    asset lottery::reward(gameinfo info, std::vector<string> luckey, string result){
+    asset lottery::reward(gameinfo info, std::map<string, int> map_luckey_ratio, string result){
         asset total_reward{0, S(4, EOS)}, reward{0, S(4, EOS)};
 
-        for(auto itr_luckey=luckey.begin(); itr_luckey != luckey.end(); itr_luckey++){
-            std::map<account_name, asset> map_acc_asset = info.map_acc_info[*itr_luckey].map_acc_asset;
+        //从info中取出中奖的信息
+        for(auto itr_luckey=map_luckey_ratio.begin(); itr_luckey != map_luckey_ratio.end(); itr_luckey++){
+            std::map<account_name, asset> map_acc_asset = info.map_acc_info[itr_luckey->first].map_acc_asset;
             for(auto itr = map_acc_asset.begin(); itr != map_acc_asset.end(); itr++){
 //                reward = itr->second * info.map_acc_info[*itr_luckey].ratio * 98/100;
-                reward = itr->second * info.map_acc_info[*itr_luckey].ratio;//不收手续费
+                reward = itr->second * itr_luckey->second;//金额*倍数
                 total_reward += reward;
                 action(//给交易所账户转入EOS
                         permission_level{ _self, N(active) },
                         N(eosio.token), N(transfer),
-                        std::make_tuple(_self, itr->first, reward, std::string("game win|"+result))
+                        std::make_tuple(_self, itr->first, reward, std::string("bet:" + itr_luckey->first + ";result:"+result))
                 ).send();
             }
         }

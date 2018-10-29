@@ -8,9 +8,9 @@ Eg: ~/eos/build/programs/cleos/cleos  push action hashfungames stop '[]' -p hash
 
 3. 开奖
 gameid： 开奖期数,不允许重复,建议每期加一
-result: 开奖结果,3个骰子号码,111-666之间
+result: 开奖结果,3个骰子号码,111-666之间,分隔符|,单*1表示结果为单,赔率为1
 void sendresult( uint64_t gameid, string result);
-Eg: ~/eos/build/programs/cleos/cleos  push action hashfungames sendresult '[1, "345"]' -p hashfungames
+Eg: ~/eos/build/programs/cleos/cleos  push action hashfungames sendresult '[3, "123|单*1|小*1|1点*1|2点*1|3点*1|6*14|1+2*5|1+3*5|2+3*5"]' -p hashfungames
 
 4. 清除totalinfos内存
 cleanram()
@@ -34,7 +34,6 @@ cleos get table user11111111 user11111111 gameinfos
                 "quant": "1.0000 EOS"       //金额
               }
             ],
-            "ratio": 50                     //奖励倍数
           }
         },{
           "flag": "双",                      //押双的玩家
@@ -47,7 +46,6 @@ cleos get table user11111111 user11111111 gameinfos
                "quant": "1.0000 EOS"
              }
             ],
-            "ratio": 2                      //奖励系数
           }
         }
       ]
@@ -73,7 +71,6 @@ cleos  get table user11111111 user11111111 historys
                 "quant": "1.0000 EOS"
               }
             ],
-            "ratio": 50
           }
         },{
           "flag": "双",
@@ -86,7 +83,6 @@ cleos  get table user11111111 user11111111 historys
                 "quant": "1.0000 EOS"
               }
             ],
-            "ratio": 2
           }
         }
       ]

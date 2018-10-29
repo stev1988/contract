@@ -47,7 +47,7 @@ namespace eoslottery {
 
         struct info{
             std::map<account_name, asset> map_acc_asset;
-            uint64_t ratio; //奖励系数
+//            uint64_t ratio; //奖励系数
         };
 
         struct gameinfo{
@@ -92,7 +92,7 @@ namespace eoslottery {
 
         void insertaccount(std::map<account_name, asset> &map_acc_asset, account_name account, asset quant);
 
-        asset reward(gameinfo info, std::vector<string> luckey, string result);
+        asset reward(gameinfo info, std::map<string, int> map_luckey_ratio, string result);
 
     };
 

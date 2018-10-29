@@ -74,7 +74,6 @@
       "base": "",
       "fields": [
           {"name":"map_acc_asset", "type":"map_acc_asset[]"},
-          {"name":"ratio", "type":"uint64"},
       ]
     },{
         "name": "map_acc_info",
