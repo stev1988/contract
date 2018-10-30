@@ -412,7 +412,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
     void kafka_plugin_impl::_process_applied_transaction(const trasaction_info_st &t) {
 
        uint64_t time = (t.block_time.time_since_epoch().count()/1000);
-            string transaction_metadata_json =
+        string transaction_metadata_json =
                     "{\"block_number\":" + std::to_string(t.block_number) + ",\"block_time\":" + std::to_string(time) +
                     ",\"trace\":" + fc::json::to_string(t.trace).c_str() + "}";
        producer->trx_kafka_sendmsg(KAFKA_TRX_APPLIED,(char*)transaction_metadata_json.c_str());
@@ -421,10 +421,46 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
     void kafka_plugin_impl::_process_accepted_block( const chain::block_state_ptr& bs )
     {
+
     }
 
     void kafka_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& bs)
     {
+        const auto block_id = bs->block->id();
+        const auto block_id_str = block_id.str();
+        const auto block_num = bs->block->block_num();
+
+
+        bool transactions_in_block = false;
+        string transaction_metadata_json =
+                "{\"block_id\":\"" + block_id_str + "\",\"block_num\":" + std::to_string(block_num) + ",\"trx_ids\":[";
+
+        for( const auto& receipt : bs->block->transactions ) {
+            string trx_id_str;
+            if( receipt.trx.contains<packed_transaction>() ) {
+                const auto& pt = receipt.trx.get<packed_transaction>();
+                // get id via get_raw_transaction() as packed_transaction.id() mutates internal transaction state
+                const auto& raw = pt.get_raw_transaction();
+                const auto& id = fc::raw::unpack<transaction>( raw ).id();
+                trx_id_str = id.str();
+            } else {
+                const auto& id = receipt.trx.get<transaction_id_type>();
+                trx_id_str = id.str();
+            }
+
+            if(transactions_in_block ){
+                transaction_metadata_json += ",\"" + trx_id_str + "\"";
+            }else{
+                transaction_metadata_json += "\"" + trx_id_str + "\"";
+            }
+            transactions_in_block = true;
+        }
+
+        if(transactions_in_block){
+            transaction_metadata_json += "]}";
+//            std::cout << transaction_metadata_json << std::endl;
+            producer->trx_kafka_sendmsg(KAFKA_TRX_APPLIED,(char*)transaction_metadata_json.c_str());
+        }
     }
 
     kafka_plugin_impl::kafka_plugin_impl()
