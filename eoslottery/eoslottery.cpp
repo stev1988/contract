@@ -64,32 +64,32 @@ namespace eoslottery {
             eosio_assert(amount.amount <= max_limit_person, "over amount_limit of person");
         });
 
-        //处理推荐奖
-        users _users(_self, _self);
-        auto itr_users = _users.find(from);
-        if(itr_users != _users.end()){//存在推荐人
-            _users.modify( itr_users, 0, [&]( auto& s ) {
-                s.bet += quantity;
-                if((s.reward*100 + asset{100000, S(4,EOS)}) <= s.bet){//超过10EOS差额,需要奖励
-                    asset reward=s.bet/100000 *1000;//过滤掉10EOS以下的金额
-                    action(//给交易所账户转入EOS
-                            permission_level{ _self, N(active) },
-                            N(eosio.token), N(transfer),
-                            std::make_tuple(_self, from, reward - s.reward, std::string("send ref_reward for bet > 10.0EOS "))
-                    ).send();
-
-                    if(is_account(s.ref)){//有推荐人
-                        action(//给交易所账户转入EOS
-                                permission_level{ _self, N(active) },
-                                N(eosio.token), N(transfer),
-                                std::make_tuple(_self, s.ref, reward-s.reward, std::string("send ref_reward for bet > 10.0EOS "))
-                        ).send();
-                    }
-
-                    s.reward = reward;
-                }
-            });
-        }
+//        //处理推荐奖
+//        users _users(_self, _self);
+//        auto itr_users = _users.find(from);
+//        if(itr_users != _users.end()){//存在推荐人
+//            _users.modify( itr_users, 0, [&]( auto& s ) {
+//                s.bet += quantity;
+//                if((s.reward*100 + asset{100000, S(4,EOS)}) <= s.bet){//超过10EOS差额,需要奖励
+//                    asset reward=s.bet/100000 *1000;//过滤掉10EOS以下的金额
+//                    action(//给交易所账户转入EOS
+//                            permission_level{ _self, N(active) },
+//                            N(eosio.token), N(transfer),
+//                            std::make_tuple(_self, from, reward - s.reward, std::string("send ref_reward for bet > 10.0EOS "))
+//                    ).send();
+//
+//                    if(is_account(s.ref)){//有推荐人
+//                        action(//给交易所账户转入EOS
+//                                permission_level{ _self, N(active) },
+//                                N(eosio.token), N(transfer),
+//                                std::make_tuple(_self, s.ref, reward-s.reward, std::string("send ref_reward for bet > 10.0EOS "))
+//                        ).send();
+//                    }
+//
+//                    s.reward = reward;
+//                }
+//            });
+//        }
 
         //挖矿,EOS:HFC=1:3
         action(//给交易所账户转入EOS
@@ -139,7 +139,7 @@ namespace eoslottery {
     }
     void lottery::sendresult( uint64_t gameid, string result){
         require_auth(_self);
-        print("\nresult",result);
+//        print("\nresult",result);
 
         gameinfos _gameinfos(_self, _self);
         auto itr = _gameinfos.begin();

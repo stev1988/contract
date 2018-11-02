@@ -18,23 +18,6 @@
         }
       ]
     },{
-        "name": "transfer",
-        "base": "",
-        "fields": [{
-            "name": "from",
-            "type": "name"
-          },{
-            "name": "to",
-            "type": "name"
-          },{
-            "name": "quantity",
-            "type": "asset"
-          },{
-              "name": "memo",
-              "type": "string"
-          }
-        ]
-      },{
       "name": "stop",
       "base": "",
       "fields": []
@@ -117,10 +100,6 @@
     "name": "insertuser",
     "type": "insertuser",
     "ricardian_contract": ""
-    },{
-      "name": "transfer",
-      "type": "transfer",
-      "ricardian_contract": ""
     },{
         "name": "stop",
         "type": "stop",
