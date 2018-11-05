@@ -1,18 +1,14 @@
 函数接口
-1. 押注：调用eosio.token的transfer接口，memo填投注选项(单,双,大,小,全围)
+1. 押注：调用eosio.token的transfer接口，memo填投注选项(单,双,大,小,全围),超过一分钟不允许下注：如59.5秒可以下注,下分钟00秒不能下注
 Eg: ~/eos/build/programs/cleos/cleos  push action eosio.token transfer '["user11111111", "user22222222", "1.0000 EOS", "单"]' -p user11111111
-   
-2. 停止押注
-void stop();
-Eg: ~/eos/build/programs/cleos/cleos  push action hashfungames stop '[]' -p hashfungames
 
-3. 开奖
+2. 开奖
 gameid： 开奖期数,不允许重复,建议每期加一
 result: 开奖结果,3个骰子号码,111-666之间,分隔符|,单*1表示结果为单,赔率为1
 void sendresult( uint64_t gameid, string result);
 Eg: ~/eos/build/programs/cleos/cleos  push action hashfungames sendresult '[3, "123|单*1|小*1|1点*1|2点*1|3点*1|6*14|1+2*5|1+3*5|2+3*5"]' -p hashfungames
 
-4. 清除totalinfos内存
+3. 清除totalinfos内存
 cleanram()
 Eg: ~/eos/build/programs/cleos/cleos  push action hashfungames cleanram '[]' -p hashfungames
 
@@ -25,7 +21,8 @@ cleos get table user11111111 user11111111 gameinfos
   "rows": [{
       "id": 0,
       "total": "101.0000 EOS",      //当前总的押注金额
-      "stop": 0,                    //是否停止押注
+      "timeid": 1541384700,		//该局游戏的时间
+      "time": "2018-11-05T02:25:00",
       "map_acc_info": [{
           "flag": "4",              //3个号码总和为4的押注信息
           "info": {
@@ -60,6 +57,7 @@ cleos  get table user11111111 user11111111 historys
 {
   "rows": [{        
       "id": 6,                          //游戏id
+      "time": "2018-11-05T02:25:00",		
       "total_bet": "102.0000 EOS",      //押注总金额
       "total_reward": "252.0000 EOS",   //该局的奖金
       "result": "112|双|小|4",           //开奖结果

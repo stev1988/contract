@@ -9,6 +9,7 @@ namespace eoslottery {
     const uint64_t min_limit = 2000;    //最少投注0.2EOS
     const uint64_t max_limit = 50000000;//每局游戏最大不超过5000EOS
     const uint64_t max_limit_person = 5000000;  //每局游戏每人不超过500EOS
+    const uint64_t minute = 60;
 
 #define CONTRACT_HFC N(hashfuncoins)
 
@@ -39,7 +40,8 @@ namespace eoslottery {
 
         auto itr = _gameinfos.begin();
         eosio_assert(itr != _gameinfos.end(), "game not exists");
-        eosio_assert(itr->stop == false, "game has been stop");//判断该局游戏是否已停止
+//        eosio_assert(itr->stop == false, "game has been stop");//判断该局游戏是否已停止
+        eosio_assert(now() < itr->timeid+minute, "game is over time ");//判断该局游戏是否已停止
 
         std::vector<string>map_flag_ratio = {
                 "小","单","全围","双","大",
@@ -99,18 +101,18 @@ namespace eoslottery {
         ).send();
     }
 
-    void lottery::stop(){
-        require_auth(_self);
-        gameinfos _gameinfos(_self, _self);
-
-        auto itr = _gameinfos.begin();
-        eosio_assert(itr != _gameinfos.end(), "game not exists, can not be stop");
-        eosio_assert(itr->stop == false, "game has been stop");
-
-        _gameinfos.modify( itr, 0, [&]( auto& s ) {
-            s.stop = true;
-        });
-    }
+//    void lottery::stop(){
+//        require_auth(_self);
+//        gameinfos _gameinfos(_self, _self);
+//
+//        auto itr = _gameinfos.begin();
+//        eosio_assert(itr != _gameinfos.end(), "game not exists, can not be stop");
+//        eosio_assert(itr->stop == false, "game has been stop");
+//
+//        _gameinfos.modify( itr, 0, [&]( auto& s ) {
+//            s.stop = true;
+//        });
+//    }
 
     void get_map_luckey(string result, std::map<string, int> &map_luckey_ratio ){
         //result=“123|单*1|小*1|1点*1|2点*1|3点*1|6*14|1+2*5|1+3*5|2+3*5”
@@ -158,6 +160,7 @@ namespace eoslottery {
 
         history _history;
         _history.id = gameid;
+        _history.time = _info.time;
         _history.total_bet = _info.total;
         _history.total_reward = reward(_info, map_luckey_ratio, result);
         _history.result = result;
@@ -196,12 +199,26 @@ namespace eoslottery {
             _totalinfos.erase(itr);
             itr=_totalinfos.begin();
         }
+
+//        gameinfos _gameinfos(_self, _self);
+//        for(auto itr=_gameinfos.begin(); itr != _gameinfos.end();){
+//            _gameinfos.erase(itr);
+//            itr=_gameinfos.begin();
+//        }
+//
+//        historys _historys(_self, _self);
+//        for(auto itr=_historys.begin(); itr != _historys.end();){
+//            _historys.erase(itr);
+//            itr=_historys.begin();
+//        }
     }
 
     void lottery::creategame(gameinfos &_gameinfos){
         _gameinfos.emplace( _self, [&]( auto& s ) {
             s.id = _gameinfos.available_primary_key();
             s.total = asset{0, S(4, EOS)};
+            s.timeid = now()/minute*minute;//以每分钟最开始计算
+            s.time = time_point_sec{s.timeid};
         });
     }
     /*
@@ -253,7 +270,7 @@ void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
         eoslottery::lottery thiscontract( receiver );
         switch (action)
         {
-            EOSIO_API( eoslottery::lottery, (insertuser)(transfer)(stop)(sendresult)(cleanram))
+            EOSIO_API( eoslottery::lottery, (insertuser)(transfer)(sendresult)(cleanram))
         }
     }
 }

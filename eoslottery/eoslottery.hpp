@@ -54,7 +54,9 @@ namespace eoslottery {
             uint64_t id;
 
             asset total;
-            bool stop;
+            uint32_t timeid;//该局开始时间
+            time_point_sec time;
+//            bool stop;
             std::map<string, info>map_acc_info;
 
             uint64_t primary_key()const { return id; }
@@ -64,7 +66,7 @@ namespace eoslottery {
 
         struct history{
             uint64_t id;
-
+            time_point_sec time;
             asset total_bet;        //总的押注金额
             asset total_reward;     //总的奖金
             string result;
