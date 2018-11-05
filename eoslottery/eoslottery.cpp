@@ -9,7 +9,7 @@ namespace eoslottery {
     const uint64_t min_limit = 2000;    //最少投注0.2EOS
     const uint64_t max_limit = 50000000;//每局游戏最大不超过5000EOS
     const uint64_t max_limit_person = 5000000;  //每局游戏每人不超过500EOS
-    const uint64_t minute = 60;
+    const uint64_t gametime = 50;//游戏可玩50s
 
 #define CONTRACT_HFC N(hashfuncoins)
 
@@ -41,7 +41,7 @@ namespace eoslottery {
         auto itr = _gameinfos.begin();
         eosio_assert(itr != _gameinfos.end(), "game not exists");
 //        eosio_assert(itr->stop == false, "game has been stop");//判断该局游戏是否已停止
-        eosio_assert(now() < itr->timeid+minute, "game is over time ");//判断该局游戏是否已停止
+        eosio_assert(now() < itr->timeid+gametime, "game is over time ");//判断该局游戏是否已停止
 
         std::vector<string>map_flag_ratio = {
                 "小","单","全围","双","大",
@@ -217,7 +217,7 @@ namespace eoslottery {
         _gameinfos.emplace( _self, [&]( auto& s ) {
             s.id = _gameinfos.available_primary_key();
             s.total = asset{0, S(4, EOS)};
-            s.timeid = now()/minute*minute;//以每分钟最开始计算
+            s.timeid = now();
             s.time = time_point_sec{s.timeid};
         });
     }
