@@ -119,6 +119,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
         static const std::string actions_col;
         static const std::string accounts_col;
         kafka_producer_ptr producer;
+
     };
 
     const account_name kafka_plugin_impl::newaccount = "newaccount";
@@ -412,7 +413,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
     void kafka_plugin_impl::_process_applied_transaction(const trasaction_info_st &t) {
 
        uint64_t time = (t.block_time.time_since_epoch().count()/1000);
-        string transaction_metadata_json =
+       string transaction_metadata_json =
                     "{\"block_number\":" + std::to_string(t.block_number) + ",\"block_time\":" + std::to_string(time) +
                     ",\"trace\":" + fc::json::to_string(t.trace).c_str() + "}";
        producer->trx_kafka_sendmsg(KAFKA_TRX_APPLIED,(char*)transaction_metadata_json.c_str());
@@ -421,6 +422,58 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
     void kafka_plugin_impl::_process_accepted_block( const chain::block_state_ptr& bs )
     {
+        auto block_num = bs->block_num;
+        if( block_num % 1000 == 0 )
+            ilog( "block_num: ${b}", ("b", block_num) );
+        const auto& block_id = bs->id;
+
+        auto &chain = chain_plug->chain();
+        auto v = chain.to_variant_with_abi( *bs->block, abi_serializer_max_time );
+        bool transactions_in_block = false;
+
+        string transaction_metadata_json =
+                "{\"block_id\":\"" + block_id.str() + "\"" +
+                "\"block_number\":" + std::to_string(block_num) +
+                ",\"block\":" + "{" +
+        //block info
+
+        "\"timestamp\":" + fc::json::to_string( v["timestamp"] ) +
+        ",\"producer\":" + fc::json::to_string( v["producer"] ) +
+        ",\"confirmed\":" + fc::json::to_string( v["confirmed"] ) +
+        ",\"transaction_mroot\":" + fc::json::to_string( v["transaction_mroot"] ) +
+        ",\"action_mroot\":" + fc::json::to_string( v["action_mroot"] ) +
+        ",\"schedule_version\":" + fc::json::to_string( v["schedule_version"] ) +
+        ",\"new_producers\":" + fc::json::to_string( v["new_producers"] ) +
+        ",\"header_extensions\":" + fc::json::to_string( v["header_extensions"] ) +
+        ",\"producer_signature\":" + fc::json::to_string( v["producer_signature"] ) +
+        ",\"trx_ids\":[";
+        for( const auto& receipt : bs->block->transactions ) {
+            string trx_id_str;
+            if( receipt.trx.contains<packed_transaction>() ) {
+                const auto& pt = receipt.trx.get<packed_transaction>();
+                const auto& raw = pt.get_raw_transaction();
+                const auto& id = fc::raw::unpack<transaction>( raw ).id();
+                trx_id_str = id.str();
+            } else {
+                const auto& id = receipt.trx.get<transaction_id_type>();
+                trx_id_str = id.str();
+            }
+
+            if(transactions_in_block ){
+                transaction_metadata_json += ",\"" + trx_id_str + "\"";
+            }else{
+                transaction_metadata_json += "\"" + trx_id_str + "\"";
+            }
+            transactions_in_block = true;
+        }
+
+        transaction_metadata_json += "]";
+        transaction_metadata_json += "}";
+        transaction_metadata_json += "}";
+
+        ilog("_process_accepted_block: ${q}", ("q", transaction_metadata_json));
+
+        producer->trx_kafka_sendmsg(KAFKA_BLOCK,(char*)transaction_metadata_json.c_str());
 
     }
 
@@ -507,6 +560,10 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
                  "The topic for accepted transaction.")
                 ("applied_trx_topic", bpo::value<std::string>(),
                  "The topic for appiled transaction.")
+                ("accept_block_topic", bpo::value<std::string>(),
+                 "The topic for accepted block.")
+                ("action_topic", bpo::value<std::string>(),
+                 "The topic for action.")
                 ("kafka-uri,k", bpo::value<std::string>(),
                  "the kafka brokers uri, as 192.168.31.225:9092")
                 ("kafka-queue-size", bpo::value<uint32_t>()->default_value(256),
@@ -519,6 +576,8 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
     void kafka_plugin::plugin_initialize(const variables_map &options) {
         char *accept_trx_topic = NULL;
         char *applied_trx_topic = NULL;
+        char *accept_block_topic = NULL;
+        char *action_topic = NULL;
         char *brokers_str = NULL;
 
         try {
@@ -530,11 +589,16 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
                 if (options.count("applied_trx_topic") != 0) {
                     applied_trx_topic = (char *) (options.at("applied_trx_topic").as<std::string>().c_str());
                 }
+                if (options.count("accept_block_topic") != 0) {
+                    accept_block_topic = (char *) (options.at("accept_block_topic").as<std::string>().c_str());
+                }
+
                 elog("brokers_str:${j}", ("j", brokers_str));
                 elog("accept_trx_topic:${j}", ("j", accept_trx_topic));
                 elog("applied_trx_topic:${j}", ("j", applied_trx_topic));
+                elog("accept_block_topic:${j}", ("j", accept_block_topic));
 
-                if (0!=my->producer->trx_kafka_init(brokers_str,accept_trx_topic,applied_trx_topic)){
+                if (0!=my->producer->trx_kafka_init(brokers_str,accept_trx_topic,applied_trx_topic,accept_block_topic)){
                     elog("trx_kafka_init fail");
                 } else{
                     elog("trx_kafka_init ok");

@@ -12,7 +12,7 @@
  */
 namespace eosio {
 
-    int kafka_producer::trx_kafka_init(char *brokers, char *acceptopic, char *appliedtopic) {
+    int kafka_producer::trx_kafka_init(char *brokers, char *acceptopic, char *appliedtopic,char *blocktopic) {
         char errstr[512];
         if (brokers == NULL) {
             return KAFKA_STATUS_INIT_FAIL;
@@ -74,6 +74,34 @@ namespace eosio {
                 return KAFKA_STATUS_INIT_FAIL;
             }
         }
+
+        if (blocktopic != NULL) {
+
+            block_conf = rd_kafka_conf_new();
+
+            if (rd_kafka_conf_set(block_conf, "bootstrap.servers", brokers, errstr,
+                                  sizeof(errstr)) != RD_KAFKA_CONF_OK) {
+                fprintf(stderr, "%s\n", errstr);
+                return KAFKA_STATUS_INIT_FAIL;
+            }
+
+            rd_kafka_conf_set_dr_msg_cb(block_conf, dr_msg_cb);
+
+            block_rk = rd_kafka_new(RD_KAFKA_PRODUCER, block_conf, errstr, sizeof(errstr));
+            if (!block_rk) {
+                fprintf(stderr, "%% Failed to create new producer:%s\n", errstr);
+                return KAFKA_STATUS_INIT_FAIL;
+            }
+
+            block_rkt = rd_kafka_topic_new(block_rk, blocktopic, NULL);
+            if (!block_rkt) {
+                fprintf(stderr, "%% Failed to create topic object: %s\n",
+                        rd_kafka_err2str(rd_kafka_last_error()));
+                rd_kafka_destroy(block_rk);
+                block_rk = NULL;
+                return KAFKA_STATUS_INIT_FAIL;
+            }
+        }
         return KAFKA_STATUS_OK;
     }
 
@@ -86,6 +114,9 @@ namespace eosio {
         } else if (trxtype == KAFKA_TRX_APPLIED) {
             rk = applied_rk;
             rkt = applied_rkt;
+        } else if (trxtype == KAFKA_BLOCK) {
+            rk = block_rk;
+            rkt = block_rkt;
         } else {
             return KAFKA_STATUS_MSG_INVALID;
         }
@@ -140,6 +171,15 @@ namespace eosio {
             rd_kafka_destroy(applied_rk);
             applied_rk = NULL;
             applied_rkt = NULL;
+        }
+        if (block_rk != NULL) {
+            rd_kafka_flush(block_rk, 10 * 1000);
+            /* Destroy topic object */
+            rd_kafka_topic_destroy(block_rkt);
+            /* Destroy the producer instance */
+            rd_kafka_destroy(block_rk);
+            block_rk = NULL;
+            block_rkt = NULL;
         }
 
         return KAFKA_STATUS_OK;
