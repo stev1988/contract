@@ -4,6 +4,7 @@
 
 
 namespace eoslottery {
+    using namespace eosio;
 
 //#define FEE_RATIO  98/100
     const uint64_t min_limit = 2000;    //最少投注0.2EOS
@@ -36,11 +37,12 @@ namespace eoslottery {
         eosio_assert(quantity.amount>=min_limit, "quantity must be >= 0.2EOS");
         eosio_assert(quantity.symbol == S(4, EOS), "quantity symbol must be EOS");
 
+        if(memo == "recharge") return;//如果是充值，则正常退出
+
         gameinfos _gameinfos(_self, _self);
 
         auto itr = _gameinfos.begin();
         eosio_assert(itr != _gameinfos.end(), "game not exists");
-//        eosio_assert(itr->stop == false, "game has been stop");//判断该局游戏是否已停止
         eosio_assert(now() < itr->timeid+gametime, "game is over time ");//判断该局游戏是否已停止
 
         std::vector<string>map_flag_ratio = {
@@ -52,9 +54,29 @@ namespace eoslottery {
                 "1+2","1+3","1+4","1+5","1+6","2+3","2+4","2+5","2+6","3+4","3+5","3+6","4+5","4+6","5+6",};
         eosio_assert(std::find(map_flag_ratio.begin(), map_flag_ratio.end(), memo) != map_flag_ratio.end(), "memo message error!");
 
+//        struct flag_ratio{
+//            string flag;
+//            uint64_t ratio;
+//        };
+//        flag_ratio map_flag_ratio[] = {
+//                {"小", 1},{"单", 1},{"全围", 24},{"双", 1},{"大", 1},
+//                {"1点", 3},{"2点", 3},{"3点", 3},{"4点", 3},{"5点", 3},{"6点", 3},
+//                {"111豹",150},{"222豹",150},{"333豹",150},{"444豹",150},{"555豹",150},{"666豹",150},
+//                {"对1",8},{"对2",8},{"对3",8},{"对4",8},{"对5",8},{"对6",8},
+//                {"4",50},{"5",18},{"6",14},{"7",12},{"8",8},{"9",6},{"10",6},{"11",6},{"12",6},{"13",8},{"14",12},{"15",14},{"16",18},{"17",50},
+//                {"1+2",5},{"1+3",5},{"1+4",5},{"1+5",5},{"1+6",5},{"2+3",5},{"2+4",5},{"2+5",5},{"2+6",5},{"3+4",5},{"3+5",5},{"3+6",5},{"4+5",5},{"4+6",5},{"5+6",5},};
+//        uint64_t num = sizeof(map_flag_ratio)/sizeof(flag_ratio), i=0;
+//        for(; i<num; i++){
+//            if(map_flag_ratio[i].flag == memo){
+//                break;
+//            }
+//        }
+//        eosio_assert(i < num, "memo message error");
+
         _gameinfos.modify( itr, 0, [&]( auto& s ) {
             s.total += quantity;
-            eosio_assert(s.total.amount <= max_limit, "over limit");
+
+            eosio_assert(s.total.amount <= max_limit && s.total.amount<=s.max.amount, "over limit");
             insertaccount(s.map_acc_info[memo].map_acc_asset,  from, quantity);
             asset amount{0,S(4,EOS)};
             //判断该局单人购买限额不超过500EOS
@@ -141,7 +163,6 @@ namespace eoslottery {
     }
     void lottery::sendresult( uint64_t gameid, string result){
         require_auth(_self);
-//        print("\nresult",result);
 
         gameinfos _gameinfos(_self, _self);
         auto itr = _gameinfos.begin();
@@ -202,7 +223,9 @@ namespace eoslottery {
             itr = _totalinfos.erase(itr);
             i++;
         }
-#if 1
+
+
+#if 0
         gameinfos _gameinfos(_self, _self);
         for(auto itr=_gameinfos.begin(); itr != _gameinfos.end();){
             _gameinfos.erase(itr);
@@ -218,8 +241,12 @@ namespace eoslottery {
     }
 
     void lottery::creategame(gameinfos &_gameinfos){
+        asset token_balance = token( N(eosio.token)).get_balance(_self,symbol_type(S(4,EOS)).name() );
+        token_balance.print();
+
         _gameinfos.emplace( _self, [&]( auto& s ) {
             s.id = _gameinfos.available_primary_key();
+            s.max = token_balance/20;
             s.total = asset{0, S(4, EOS)};
             s.timeid = now();
             s.time = time_point_sec{s.timeid};

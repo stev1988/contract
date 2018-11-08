@@ -11,6 +11,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/types.hpp>
 #include <string>
+#include "../eosio.token/eosio.token.hpp"
 
 namespace eoslottery {
     using namespace eosio;
@@ -46,17 +47,17 @@ namespace eoslottery {
         typedef eosio::multi_index<N(users), user> users;
 
         struct info{
+//            asset total;
             std::map<account_name, asset> map_acc_asset;
-//            uint64_t ratio; //奖励系数
         };
 
         struct gameinfo{
             uint64_t id;
 
+            asset max;
             asset total;
             uint32_t timeid;//该局开始时间
             time_point_sec time;
-//            bool stop;
             std::map<string, info>map_acc_info;
 
             uint64_t primary_key()const { return id; }

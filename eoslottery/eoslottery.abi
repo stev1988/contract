@@ -69,6 +69,7 @@
       "base": "",
       "fields": [
           {"name":"id", "type":"uint64"},
+          {"name":"max", "type":"asset"},
           {"name":"total", "type":"asset"},
           {"name":"timeid", "type":"uint32"},
           {"name":"time", "type":"time_point_sec"},
