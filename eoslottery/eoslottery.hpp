@@ -33,7 +33,7 @@ namespace eoslottery {
 
         void sendresult( uint64_t gameid, string result);
 
-        void cleanram();
+        void cleanram(uint64_t num);
     private:
         struct user{
             account_name user;

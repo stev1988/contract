@@ -191,26 +191,30 @@ namespace eoslottery {
         creategame(_gameinfos);
     }
 
-    void lottery::cleanram(){
+    void lottery::cleanram(uint64_t num){
         print("删除total数据\n");
         require_auth(_self);
         totalinfos _totalinfos(_self, _self);
-        for(auto itr=_totalinfos.begin(); itr != _totalinfos.end();){
-            _totalinfos.erase(itr);
-            itr=_totalinfos.begin();
+        auto itr=_totalinfos.begin();
+
+        auto i=0;
+        while(itr != _totalinfos.end() && i<num){
+            itr = _totalinfos.erase(itr);
+            i++;
+        }
+#if 1
+        gameinfos _gameinfos(_self, _self);
+        for(auto itr=_gameinfos.begin(); itr != _gameinfos.end();){
+            _gameinfos.erase(itr);
+            itr=_gameinfos.begin();
         }
 
-//        gameinfos _gameinfos(_self, _self);
-//        for(auto itr=_gameinfos.begin(); itr != _gameinfos.end();){
-//            _gameinfos.erase(itr);
-//            itr=_gameinfos.begin();
-//        }
-//
-//        historys _historys(_self, _self);
-//        for(auto itr=_historys.begin(); itr != _historys.end();){
-//            _historys.erase(itr);
-//            itr=_historys.begin();
-//        }
+        historys _historys(_self, _self);
+        for(auto itr=_historys.begin(); itr != _historys.end();){
+            _historys.erase(itr);
+            itr=_historys.begin();
+        }
+#endif
     }
 
     void lottery::creategame(gameinfos &_gameinfos){

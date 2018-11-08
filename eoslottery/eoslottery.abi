@@ -31,7 +31,9 @@
     },{
      "name": "cleanram",
      "base": "",
-     "fields": []
+     "fields": [
+       {"name":"num", "type":"uint64"},
+     ]
      },{
       "name": "user",
       "base": "",

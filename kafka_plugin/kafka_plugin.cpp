@@ -360,7 +360,6 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
                     start_block_reached = true;
                 }
             }
-            ilog("process_accepted_block: ${q}", ("q", start_block_reached));
             if (start_block_reached) {
                 _process_accepted_block(bs);
             }
@@ -436,7 +435,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
         string transaction_metadata_json =
                 "{\"block_id\":\"" + block_id.str() + "\"" +
-                ",\"block_number\":" + std::to_string(block_num) +
+                ",\"block_num\":" + std::to_string(block_num) +
                 ",\"block\":" + "{" +
         //block info
 
@@ -514,7 +513,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
         if(transactions_in_block){
             transaction_metadata_json += "]}";
-            producer->trx_kafka_sendmsg(KAFKA_TRX_APPLIED,(char*)transaction_metadata_json.c_str());
+            producer->trx_kafka_sendmsg(KAFKA_BLOCK,(char*)transaction_metadata_json.c_str());
         }
     }
 
