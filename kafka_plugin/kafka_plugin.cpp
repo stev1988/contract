@@ -428,7 +428,6 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
             ilog( "block_num: ${b}", ("b", block_num) );
         const auto& block_id = bs->id;
 
-        ilog("fail line: ${l}", ("l", __LINE__));
         auto &chain = chain_plug->chain();
         auto v = chain.to_variant_with_abi( *bs->block, abi_serializer_max_time );
         bool transactions_in_block = false;
@@ -473,7 +472,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
         transaction_metadata_json += "}";
         transaction_metadata_json += "}";
 
-        ilog("_process_accepted_block: ${q}", ("q", transaction_metadata_json));
+//        ilog("_process_accepted_block: ${q}", ("q", transaction_metadata_json));
 
         producer->trx_kafka_sendmsg(KAFKA_BLOCK,(char*)transaction_metadata_json.c_str());
 
