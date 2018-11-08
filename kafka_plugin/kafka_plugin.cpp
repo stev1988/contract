@@ -360,6 +360,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
                     start_block_reached = true;
                 }
             }
+            ilog("process_accepted_block: ${q}", ("q", start_block_reached));
             if (start_block_reached) {
                 _process_accepted_block(bs);
             }
@@ -404,7 +405,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
 
         trx_json += "\"trx\":" + fc::json::to_string( trx ) + "}";
-        ilog("_process_accepted_transaction: ${q}", ("q", trx_json));
+//        ilog("_process_accepted_transaction: ${q}", ("q", trx_json));
 
         producer->trx_kafka_sendmsg(KAFKA_TRX_ACCEPT,(char*)trx_json.c_str());
 
@@ -420,6 +421,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
     }
 
+
     void kafka_plugin_impl::_process_accepted_block( const chain::block_state_ptr& bs )
     {
         auto block_num = bs->block_num;
@@ -427,13 +429,14 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
             ilog( "block_num: ${b}", ("b", block_num) );
         const auto& block_id = bs->id;
 
+        ilog("fail line: ${l}", ("l", __LINE__));
         auto &chain = chain_plug->chain();
         auto v = chain.to_variant_with_abi( *bs->block, abi_serializer_max_time );
         bool transactions_in_block = false;
 
         string transaction_metadata_json =
                 "{\"block_id\":\"" + block_id.str() + "\"" +
-                "\"block_number\":" + std::to_string(block_num) +
+                ",\"block_number\":" + std::to_string(block_num) +
                 ",\"block\":" + "{" +
         //block info
 
@@ -486,7 +489,7 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
         bool transactions_in_block = false;
         string transaction_metadata_json =
-                "{\"block_id\":\"" + block_id_str + "\",\"block_num\":" + std::to_string(block_num) + ",\"trx_ids\":[";
+                "{\"block_id\":\"" + block_id_str + "\",\"block_num\":" + std::to_string(block_num) + ",\"irreversible\":true" + ",\"trx_ids\":[";
 
         for( const auto& receipt : bs->block->transactions ) {
             string trx_id_str;
@@ -511,7 +514,6 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
         if(transactions_in_block){
             transaction_metadata_json += "]}";
-//            std::cout << transaction_metadata_json << std::endl;
             producer->trx_kafka_sendmsg(KAFKA_TRX_APPLIED,(char*)transaction_metadata_json.c_str());
         }
     }
@@ -621,6 +623,8 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
 
                 // hook up to signals on controller
                 //chain_plugin* chain_plug = app().find_plugiin<chain_plugin>();
+                my->abi_serializer_max_time = app().get_plugin<chain_plugin>().get_abi_serializer_max_time();
+
                 my->chain_plug = app().find_plugin<chain_plugin>();
                 EOS_ASSERT(my->chain_plug, chain::missing_chain_plugin_exception, "");
                 auto &chain = my->chain_plug->chain();
