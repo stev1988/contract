@@ -30,11 +30,58 @@ namespace eoslottery {
         });
     }
 
+    void get_map_luckey(string result, std::map<string, int> &map_luckey_ratio ){
+        //result=“123|单*1|小*1|1点*1|2点*1|3点*1|6*14|1+2*5|1+3*5|2+3*5”
+        auto pos = result.find('|');
+        auto pos1 = 0;
+
+        string data="";
+        string key="";
+        string ratio="";
+        while(pos != string::npos){
+            pos++;
+            pos1 = result.find('|', pos);
+
+            if(pos1 == string::npos){
+                data = result.substr(pos);
+            }else{
+                data = result.substr(pos, pos1-pos);
+            }
+
+            key = data.substr(0, data.find('*'));
+            ratio = data.substr(data.find('*')+1);
+
+            map_luckey_ratio[key] = atoi(ratio.c_str()) + 1;
+            pos = pos1;
+        }
+    }
+
+    void get_map_bet(string result, std::vector<string> &bet ){
+        //result=“单|双|大|小|全围”
+        auto pos = 0;
+        auto pos1 = 0;
+
+        string data="";
+        while(pos != string::npos){
+            pos1 = result.find('|', pos);
+
+            if(pos1 == string::npos){
+                data = result.substr(pos);
+                bet.push_back(data);
+                return;
+            }else{
+                data = result.substr(pos, pos1-pos);
+            }
+
+            bet.push_back(data);
+            pos = pos1+1;
+        }
+    }
     void lottery::transfer( account_name from, account_name to, asset quantity, string memo ){
         require_auth(from);
         if(from == _self || to != _self) return;
-        print("memo:",memo);
-        eosio_assert(quantity.amount>=min_limit, "quantity must be >= 0.2EOS");
+//        print("memo:",memo);
+//        eosio_assert(quantity.amount>=min_limit, "quantity must be >= 0.2EOS");
         eosio_assert(quantity.symbol == S(4, EOS), "quantity symbol must be EOS");
 
         if(memo == "recharge") return;//如果是充值，则正常退出
@@ -47,37 +94,23 @@ namespace eoslottery {
 
         std::vector<string>map_flag_ratio = {
                 "小","单","全围","双","大",
-                "1点","2点","3点","4点","5点","6点",
-                "111豹","222豹","333豹","444豹","555豹","666豹",
-                "对1","对2","对3","对4","对5","对6",
-                "4","5","6","7","8","9","10","11","12","13","14","15","16","17",
-                "1+2","1+3","1+4","1+5","1+6","2+3","2+4","2+5","2+6","3+4","3+5","3+6","4+5","4+6","5+6",};
-        eosio_assert(std::find(map_flag_ratio.begin(), map_flag_ratio.end(), memo) != map_flag_ratio.end(), "memo message error!");
+//                "1点","2点","3点","4点","5点","6点",
+//                "111豹","222豹","333豹","444豹","555豹","666豹",
+//                "对1","对2","对3","对4","对5","对6",
+//                "4","5","6","7","8","9","10","11","12","13","14","15","16","17",
+//                "1+2","1+3","1+4","1+5","1+6","2+3","2+4","2+5","2+6","3+4","3+5","3+6","4+5","4+6","5+6",
+                };
 
-//        struct flag_ratio{
-//            string flag;
-//            uint64_t ratio;
-//        };
-//        flag_ratio map_flag_ratio[] = {
-//                {"小", 1},{"单", 1},{"全围", 24},{"双", 1},{"大", 1},
-//                {"1点", 3},{"2点", 3},{"3点", 3},{"4点", 3},{"5点", 3},{"6点", 3},
-//                {"111豹",150},{"222豹",150},{"333豹",150},{"444豹",150},{"555豹",150},{"666豹",150},
-//                {"对1",8},{"对2",8},{"对3",8},{"对4",8},{"对5",8},{"对6",8},
-//                {"4",50},{"5",18},{"6",14},{"7",12},{"8",8},{"9",6},{"10",6},{"11",6},{"12",6},{"13",8},{"14",12},{"15",14},{"16",18},{"17",50},
-//                {"1+2",5},{"1+3",5},{"1+4",5},{"1+5",5},{"1+6",5},{"2+3",5},{"2+4",5},{"2+5",5},{"2+6",5},{"3+4",5},{"3+5",5},{"3+6",5},{"4+5",5},{"4+6",5},{"5+6",5},};
-//        uint64_t num = sizeof(map_flag_ratio)/sizeof(flag_ratio), i=0;
-//        for(; i<num; i++){
-//            if(map_flag_ratio[i].flag == memo){
-//                break;
-//            }
-//        }
-//        eosio_assert(i < num, "memo message error");
+        std::vector<string> bet;
+        get_map_bet(memo, bet);
+
+        asset quant_per = quantity/bet.size();//每一组的平均金额
+        eosio_assert(quant_per.amount>=min_limit, "quant_per must be >= 0.2EOS");
 
         _gameinfos.modify( itr, 0, [&]( auto& s ) {
             s.total += quantity;
-
             eosio_assert(s.total.amount <= max_limit && s.total.amount<=s.max.amount, "over limit");
-            insertaccount(s.map_acc_info[memo].map_acc_asset,  from, quantity);
+
             asset amount{0,S(4,EOS)};
             //判断该局单人购买限额不超过500EOS
             for(auto item=s.map_acc_info.begin(); item != s.map_acc_info.end(); item++){
@@ -85,9 +118,20 @@ namespace eoslottery {
                     amount += item->second.map_acc_asset[from];
                 }
             }
-            eosio_assert(amount.amount <= max_limit_person, "over amount_limit of person");
-        });
+            eosio_assert(amount.amount + quantity.amount <= max_limit_person, "over amount_limit of person");
 
+            for(auto itr_bet=bet.begin(); itr_bet != bet.end(); itr_bet++){
+                eosio_assert(std::find(map_flag_ratio.begin(), map_flag_ratio.end(), *itr_bet) != map_flag_ratio.end(), "memo message error!");
+
+                if(s.map_acc_info[*itr_bet].map_acc_asset.find(from) == s.map_acc_info[*itr_bet].map_acc_asset.end()){
+                    s.map_acc_info[*itr_bet].map_acc_asset[from] = quant_per;
+                }else{
+                    s.map_acc_info[*itr_bet].map_acc_asset[from] += quant_per;
+                }
+            }
+
+
+        });
 //        //处理推荐奖
 //        users _users(_self, _self);
 //        auto itr_users = _users.find(from);
@@ -121,6 +165,7 @@ namespace eoslottery {
                 CONTRACT_HFC, N(issue),
                 std::make_tuple(from, asset{quantity.amount*3, S(4, HFC)}, std::string("reward HFC to user"))
         ).send();
+
     }
 
 //    void lottery::stop(){
@@ -136,31 +181,7 @@ namespace eoslottery {
 //        });
 //    }
 
-    void get_map_luckey(string result, std::map<string, int> &map_luckey_ratio ){
-        //result=“123|单*1|小*1|1点*1|2点*1|3点*1|6*14|1+2*5|1+3*5|2+3*5”
-        auto pos = result.find('|');
-        auto pos1 = 0;
 
-        string data="";
-        string key="";
-        string ratio="";
-        while(pos != string::npos){
-            pos++;
-            pos1 = result.find('|', pos);
-
-            if(pos1 == string::npos){
-                data = result.substr(pos);
-            }else{
-                data = result.substr(pos, pos1-pos);
-            }
-
-            key = data.substr(0, data.find('*'));
-            ratio = data.substr(data.find('*')+1);
-
-            map_luckey_ratio[key] = atoi(ratio.c_str()) + 1;
-            pos = pos1;
-        }
-    }
     void lottery::sendresult( uint64_t gameid, string result){
         require_auth(_self);
 
