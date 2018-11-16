@@ -401,9 +401,10 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
         string1 = ((t->scheduled)?"true":"false");
         trx_json += "\"scheduled\":" + string1 + ",";
 
+        auto &chain = chain_plug->chain();
+        auto v = chain.to_variant_with_abi( trx, abi_serializer_max_time );
 
-
-        trx_json += "\"trx\":" + fc::json::to_string( trx ) + "}";
+        trx_json += "\"trx\":" + fc::json::to_string( v ) + "}";
 //        ilog("_process_accepted_transaction: ${q}", ("q", trx_json));
 
         producer->trx_kafka_sendmsg(KAFKA_TRX_ACCEPT,(char*)trx_json.c_str());
@@ -413,9 +414,13 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
     void kafka_plugin_impl::_process_applied_transaction(const trasaction_info_st &t) {
 
        uint64_t time = (t.block_time.time_since_epoch().count()/1000);
+
+        auto &chain = chain_plug->chain();
+        auto v = chain.to_variant_with_abi( *t.trace, abi_serializer_max_time );
+
        string transaction_metadata_json =
                     "{\"block_number\":" + std::to_string(t.block_number) + ",\"block_time\":" + std::to_string(time) +
-                    ",\"trace\":" + fc::json::to_string(t.trace).c_str() + "}";
+                    ",\"trace\":" + fc::json::to_string(v).c_str() + "}";
        producer->trx_kafka_sendmsg(KAFKA_TRX_APPLIED,(char*)transaction_metadata_json.c_str());
 
     }
