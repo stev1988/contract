@@ -1,0 +1,268 @@
+一、transfer 存款----前端调用
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  push action eosio.token transfer '["user11111111","contract1111", "10000.0000 EOS", "debit"]' -p user11111111
+通过memo告诉合约是存款，memo填debit
+
+二、undebit 取回存款，3天冻结期----前端调用
+参数1：account：用户名
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  push action contract1111 undebit '["user22222222"]' -p user22222222
+
+
+三、undebitexec 执行解冻，用户超过3天冻结期后，转钱给用户----后端调用：定时查看撤回存款表，如有到期账户，则调用undebitexec给用户转回本息
+参数1:id，查询undebittabs表可以获取到id，根据id执行给用户转账
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001 push action contract1111 undebitexec '["1"]' -p contractexec
+
+
+四、settle每天结算利息----后端调用：每天00:00调用settle()统计分红利息
+参数1:num: 当num=0时,表示对所有储蓄用户统计分红；当num>0时,表示要分批次统计,一次统计num个用户； 提示：前期储蓄用户少可以传0，当用户多到一定程度,一次指令无法统计完所有用户,此时需要分批次统计,建议传100,当globals.settle_id改变时,表示统计完所有用户//2018.11.15新增
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001 push action contract1111 settle '[0]' -p contractexec
+
+五、transfer租赁cpu和net----前端调用
+cleos --wallet-url http://127.0.0.1:6666 --url http://localhost:8000  push action eosio.token transfer '["user11111111","contract1111", "0.2000 EOS", "delegatebw|user22222222|1000|1000|1"]' -p user11111111
+通过memo告诉合约是租赁，memo填“delegatebw|user22222222|1000|1000|0.1”即“delegatebw|用户名|net金额|cpu金额|天数”
+
+六、undelegatebw赎回账户：----后端调用: 定时查看是否有用户赎回到期,调用此接口,对用户进行批量赎回
+参数1：num，每次执行赎回的用户量，每条交易命令有限制执行时间，如果赎回的用户量太多，会导致交易失败，所以要限制个数，建议在100以内
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  push action contract1111 undelegatebw '[100]' -p contractexec
+
+七、update重置出租主账户，服务端定时查询主账户表第一个账户,如果过期，则调用undelegatebw赎回所有用户后，等待所有租金返还后，即当前账户余额等于已出租金额(通过get table contract1111 eosgasxxxxx1 delegatetabs查询账户已出租金额)，调用update
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  push action contract1111 update '[]' -p contractexec
+
+
+
+table表
+1. 查看所有存款用户
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  get table contract1111 contract1111 bankers
+{
+  "rows": [{
+      "account": "user11111111",	//用户名
+      "deposit": "0.0000 EOS",		//今天以前的存款
+      "today_deposit": "10000.0000 EOS",	//今天的存款
+      "reward": "0.0000 EOS",		//利息
+      "settle_id": 0					//2018.11.15新增，用于settle接口
+    },{
+      "account": "user22222222",
+      "deposit": "0.0000 EOS",
+      "today_deposit": "100.0000 EOS",
+      "reward": "0.0000 EOS",
+      "settle_id": 0
+    },{
+      "account": "user33333333",
+      "deposit": "0.0000 EOS",
+      "today_deposit": "100.0000 EOS",
+      "reward": "0.0000 EOS",
+      "settle_id": 0
+    }
+  ],
+  "more": false
+}
+
+2. 查看所有撤回存款用户
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  get table contract1111 contract1111 undebittabs
+{
+  "rows": [{
+      "id": 0,
+      "account": "user22222222",		//用户名
+      "timeid": 1542077902,			//存款冻结期限
+      "time": "2018-11-13T02:58:22",		//与timeid一致
+      "deposit": "100.0000 EOS",		//本金
+      "reward": "0.0000 EOS"			//利息
+    },{
+      "id": 1,
+      "account": "user33333333",
+      "timeid": 1542077902,
+      "time": "2018-11-13T02:58:22",
+      "deposit": "100.0000 EOS",
+      "reward": "0.0000 EOS"
+    }
+  ],
+  "more": false
+}
+
+3. 查看所有管理信息
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  get table contract1111 contract1111 globals
+{
+  "rows": [{
+      "id": 0,
+      "a": "-0.00010367892976589",		//计算cpu利息的参数
+      "b": "0.00401036789297659",		//计算cpu利息的参数
+      "deposit": "0.0000 EOS",			//今天以前的总存款
+      "today_deposit": "10000.0000 EOS",	//今天的总存款
+      "staked": "202.3884 EOS",			//已出租资金
+      "earnings": "0.4400 EOS",			//收益
+      "platform_fee": "0.0000 EOS",		//平台手续费
+      "fee_ratio": "0.20000000000000001",	//平台手续费率
+      "settle_id": 0,						//2018.11.15新增，用于settle接口
+      "map_time_account": [{			//出租主账号表
+          "expiretime": 1542078029,		//赎回到期时间
+	  "info": {
+          "account": "eosgasxxxxx1"，		//主账号1
+          "staked": "68.8320 EOS"		//出租主账户eosgasxxxxx1总共出租了多少EOS//2018.11.15新增，用于settle接口
+	  }
+        },{
+          "expiretime": 1542250686,
+          "info": {
+            "account": "eosgasxxxxx2",
+            "staked": "97.7457 EOS"
+          }
+        },{
+          "expiretime": 1542251046,
+          "info": {
+            "account": "eosgasxxxxx3",
+            "staked": "112.0128 EOS"
+          }
+        },{
+          "expiretime": 1542251406,
+          "info": {
+            "account": "eosgasxxxxx4",
+            "staked": "0.0000 EOS"
+          }
+        },{
+          "expiretime": 1542251766,
+          "info": {
+            "account": "eosgasxxxxx5",
+            "staked": "2.9639 EOS"
+          }
+        },{
+          "expiretime": 1542252126,
+          "info": {
+            "account": "eosgasxxxx11",
+            "staked": "4.1847 EOS"
+          }
+        },{
+          "expiretime": 1542252486,
+          "info": {
+            "account": "eosgasxxxx12",
+            "staked": "0.0000 EOS"
+          }
+        }
+
+      ]，,
+      "map_time_yield": [{			//七天收益；七天年化收益率 = (所有收益率相加和 / 数量)×365
+          "expiretime": 1542345545,
+          "yield": "0.00160000000000000"	//1天的收益率
+        },{
+          "expiretime": 1542345445,
+          "yield": "0.00000800000000000"
+        },{
+          "expiretime": 1542345481,
+          "yield": "0.00008000000000000"
+        },{
+          "expiretime": 1542345545,
+          "yield": "0.00160000000000000"
+        },{
+          "expiretime": 1542345556,
+          "yield": "0.00000000000000000"
+        },{
+          "expiretime": 1542345560,
+          "yield": "0.00000000000000000"
+        },{
+          "expiretime": 1542345563,
+          "yield": "0.00000000000000000"
+        }
+	]
+    }
+  ],
+  "more": false
+}
+
+4. 查看每个出租主账户的用户信息
+cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  get table contract1111 eosgasxxxxx1 delegatetabs --key-type i64 --index 2 
+{
+  "rows": [{
+      "id": 0,	
+      "account": "user22222222",		//用户名
+      "net_weight": "25.5971 EOS",		//出租的金额
+      "cpu_weight": "0.0000 EOS",	
+      "expireid": 1542077780,			//到期时间
+      "expire": "2018-11-13T02:56:20"		//与expireid一致
+    },{
+      "id": 1,
+      "account": "user22222222",
+      "net_weight": "0.0000 EOS",
+      "cpu_weight": "25.0000 EOS",
+      "expireid": 1542077726,
+      "expire": "2018-11-13T02:55:26"
+    }
+  ],
+  "more": false
+}
+
+
+账户公私钥
+contractexec：
+#Private key: 5KUSstKwzDzbYHEgo52UFCaWVoi3AFihfEkDUroVnXmpjcH7A4g
+#Public key: EOS77h8uwf762WkDxbULukvjcJU2rhjt81nQqumegRjau1Ee2YBrf
+
+eosgasxxxxx1、eosgasxxxxx2、eosgasxxxxx3、eosgasxxxxx4、eosgasxxxxx5、eosgasxxxx11、eosgasxxxx12
+#Private key: 5JymZkz7eomP8CuJ5KMzzDVN5o1DQ3WYhBoLwovLD2435reoYgC
+#Public key: EOS7BUuQsCNSrLWSFNHzgzbQmp6jdzhqnMjWzXQzxywbVAqWfjSwM
+
+user11111111
+#Private key: 5KDsFepEAS7hEpnkRVFk7NQiX7gxCTVvUVTTVvi84XSkuNKRaVh
+#Public key: EOS7nnGJ7Ra911dwR1rQFw2MD2M8RkRPzUBtYb3qBmuYfaxbkUWmd
+
+user22222222，user33333333, user44444444,user55555555
+#Private key: 5Jo6Ceomf55SomY3ywwUHVBXK5GzLZF3UCbAgXKP4fvVotLYP1E
+#Public key: EOS7TbrWEfDYug9DTu3rERagB5f2kYVZrB9bS8VU9kwjT9DWH9s8B
+
+
+后台服务任务说明：
+出租任务：
+每隔n(可设置，暂定1小时)：
+0).获取globals中第一个出租账户account,根据get table contract1111 $account delegatetabs --key-type i64 --index 2查找对应的用户出租信息，判断第一个用户是否到期?是跳转1) : 否跳转3)
+1).执行以下指令，对用户进行赎回；cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  push action contract1111 undelegatebw '[0]' -p contractexec指令执行成功? 是跳转3) ：否跳转2)
+2).修改参数,建议num=100，如失败，改成50，如还失败，再减小，逐渐减小至1;逻辑代码如下所示，执行完后跳转到3)
+bool exit = false；
+while(1){
+if(cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  push action contract1111 undelegatebw '[num]' -p contractexec 指令执行成功){
+exit = true;//只要执行成功1次，后面循环再失败的话就退出
+}else if(exit){
+break;//执行成功过1次，exit就会置位允许退出,再失败就退出
+}else{
+减小num，最小为1；
+}
+
+}
+3判断account是否到期? 是则跳转到4):否则跳转到5)
+4)执行update(),跳转5)
+5)结束任务
+
+3).获取出租账户account的余额balance：get currency balance eosio.token $account EOS;当$balance==$staked? 是跳转到4) : 否跳转到6)
+4).执行push action contract1111 recycle '["$account","$balance"]' -p contractexec回收租金给合约,判断account是否到期? 是则跳转到5):否则跳转到8)
+5).调用update(),跳转到8)
+6).$balance>=100.0000 EOS(可设置大小)? 是跳转到7) : 否跳转到8)
+7).执行push action contract1111 recycle '["$account","$balance"]' -p contractexec回收租金给合约，跳转8)
+8).结束定时任务
+
+回收任务
+每隔n小时(可设置，暂定1小时)
+0)获取所有出租账户的staked，从第一个出租账户查询起直至最后一个账户查完退出，staked>0? 是跳转到1) : 否跳转到0)查询下一个出租账户
+1)获取余额：get currency balance eosio.token $account EOS，判断余额>=$staked? 是跳转2) : 否返回0)查询下一个出租用户
+2)push action contract1111 recycle '["$account","$staked"]' -p contractexec，跳转到0)查询下一个账户
+
+分红任务：
+每天00：00后执行
+0)执行cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001 push action contract1111 settle '[0]' -p contractexec；成功? 是跳转到2） : 否跳转到1)
+1)修改参数,建议num=100，如失败，改成50，如还失败，再减小，逐渐减小至1;逻辑代码如下所示，执行完后跳转到2)
+
+
+while(1){
+if(cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001 push action contract1111 settle '[num]' -p contractexec 指令执行失败){
+减小num
+continue；
+}
+
+if(global.state == 0) break；
+}
+2)结束分红任务
+
+存款任务：
+0)获取cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001  get table contract1111 contract1111 undebittabs --key-type i64 --index 2 赎回信息，判断第一个不在黑名单中的用户是否到期?是跳转到1):否跳转4)
+1)判断account的deposit是否超过10000.0000 EOS(可调整)?是跳转到2) : 否跳转到3)
+2)发短信或者其他途径告知后台管理人员，查看该笔订单是否异常,审核是否通过?是跳转到3):否跳转到6)。
+3)添加到后台的赎回列表(该列表是后台自己管理，记录着所有需要赎回的正常用户)，如已存在，跳过，不存在则插入，跳转到4)
+4)后台赎回列表中是否有超过一天期限的?是跳转到5):否跳转到0
+5)执行cleos --wallet-url http://127.0.0.1:8900 --url http://18.144.16.89:8001 push action contract1111 undebitexec '[id]' -p contractexec对用户进行转账，跳转到0)
+6)添加该订单到黑名单中,跳转到0)
+
+
