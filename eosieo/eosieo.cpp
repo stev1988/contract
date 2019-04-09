@@ -9,8 +9,9 @@ namespace eosieo {
     using namespace std;
 
     const uint64_t per_day_time = 24 * 3600;
-    const uint64_t vote_time = 7*3600;
-#define QUANTITY_AMOUNT N(user33333333)
+    const uint64_t vote_time = 24*3600;
+#define QUANTITY_AMOUNT1 N(vslv5rfsqkrs)
+#define QUANTITY_AMOUNT2 N(i5ycclxrg1io)
 
     void ieo::init(){
         require_auth(_self);
@@ -29,13 +30,13 @@ namespace eosieo {
 
         if (from == _self || to != _self) return;
         eosio_assert(quantity.symbol == S(4, EOS), "symbol must be EOS");
+        eosio_assert(quantity.amount > 0, "vote amount must be > 0 EOS");
         print("\nmemo:",memo.c_str());
 
         if(memo == "vote"){
-            eosio_assert(quantity.amount == 2000, "vote amount must be 0.2000 EOS");
             vote(from, quantity);
         }else if(memo.compare(0, 4, "buy:") == 0){
-            eosio_assert(quantity.amount > 0, "vote amount must be > 0 EOS");
+
             buy(from, quantity, memo.substr(4));
         }else{
 
@@ -43,7 +44,7 @@ namespace eosieo {
 
     }
 
-    void ieo::createvote(){
+    void ieo::createvote( asset votefee, asset price, uint64_t quantity){
         require_auth(_self);
 
         uint32_t starttime, endtime;
@@ -66,8 +67,9 @@ namespace eosieo {
             voteglobal1.votertotal = 0;
             voteglobal1.winnerstotal = 0;
             voteglobal1.random = 0;
-            voteglobal1.price = asset{0, S(4, EOS)};
-            voteglobal1.quantity = 0;
+            voteglobal1.votefee = votefee;
+            voteglobal1.price = price;
+            voteglobal1.quantity = quantity;
             m.voteinfo[m.currentid] = voteglobal1;
         });
 
@@ -81,6 +83,7 @@ namespace eosieo {
         auto itr_voteinfo = _globals.begin()->voteinfo.find(id);
         eosio_assert(itr_voteinfo != _globals.begin()->voteinfo.end(), "vote not create");
         eosio_assert(itr_voteinfo->second.closed == false, "this vote is closed");
+        eosio_assert(quantity == itr_voteinfo->second.votefee, "vote amount must be global.voteinfo.votefee");
 
         uint32_t currenttime = now();
         eosio_assert(currenttime >= itr_voteinfo->second.starttime.utc_seconds, "vote not start");
@@ -109,13 +112,14 @@ namespace eosieo {
         action(
                 permission_level{ _self, N(active) },
                 N(eosio.token), N(transfer),
-                std::make_tuple(_self, QUANTITY_AMOUNT, quantity, std::string("IEO send vote quantity"))
+                std::make_tuple(_self, QUANTITY_AMOUNT1, quantity, std::string("IEO send vote quantity"))
         ).send();
     }
 
-    void ieo::result(int64_t random, uint64_t winnernum, asset price, uint64_t quantity){
+    void ieo::result(int64_t random, uint64_t winnernum){
         require_auth(_self);
 
+        eosio_assert(winnernum > 0, "winnernum should be > 0");
         globals _globals(_self, _self);
         eosio_assert(_globals.begin() != _globals.end(), "global not inits");
 
@@ -126,24 +130,32 @@ namespace eosieo {
         eosio_assert(itr_voteinfo != itr->voteinfo.end(), "id not exists");
 
         eosio_assert(itr_voteinfo->second.closed==false, "vote is closed");
-//        eosio_assert(winnernum <= itr_voteinfo->second.votertotal, "winnernum should be <= voteinfo.votertotal");
-        if(winnernum > itr_voteinfo->second.votertotal){
-            winnernum = itr_voteinfo->second.votertotal;
+
+        voters _voters(_self, id);
+        if(_voters.begin() == _voters.end()) {
+            winnernum = 0;
         }
+        else{
+            if(winnernum >= itr_voteinfo->second.votertotal){
+                winnernum = itr_voteinfo->second.votertotal;
 
-        if(winnernum > 0){
-            uint64_t group = itr_voteinfo->second.votertotal/winnernum;
-            uint64_t winnerNo = random % group;
-
-            voters _voters(_self, id);
-            eosio_assert(_voters.begin() != _voters.end(), "vote not exists");
-
-            auto idx = _voters.template get_index<N(number)>();
-            for(int i=0; i<winnernum; i++){
-                auto itr_number = idx.find(winnerNo+i*group);
-                _voters.modify(*itr_number , 0, [&](auto &m) {
-                    m.iswinner = true;
-                });
+                auto itr_voters = _voters.begin();
+                while(itr_voters != _voters.end()){
+                    _voters.modify(*itr_voters , 0, [&](auto &m) {
+                        m.iswinner = true;
+                    });
+                    itr_voters++;
+                }
+            }else{
+                double group = (double)itr_voteinfo->second.votertotal/winnernum;
+                uint64_t winnerNo = random % (uint64_t)group;
+                auto idx = _voters.template get_index<N(number)>();
+                for(int i=0; i<winnernum; i++){
+                    auto itr_number = idx.find(uint64_t(group*i+winnerNo));
+                    _voters.modify(*itr_number , 0, [&](auto &m) {
+                        m.iswinner = true;
+                    });
+                }
             }
         }
 
@@ -151,11 +163,10 @@ namespace eosieo {
             m.voteinfo[id].closed = true;
             m.voteinfo[id].winnerstotal = winnernum;
             m.voteinfo[id].random = random;
-            m.voteinfo[id].price = price;
-            m.voteinfo[id].quantity = quantity;
         });
 
     };
+
 
     void ieo::buy(account_name account, asset quantity, string ethaddress){
         globals _globals(_self, _self);
@@ -181,9 +192,48 @@ namespace eosieo {
         action(
                 permission_level{ _self, N(active) },
                 N(eosio.token), N(transfer),
-                std::make_tuple(_self, QUANTITY_AMOUNT, quantity, std::string("IEO send buy quantity"))
+                std::make_tuple(_self, QUANTITY_AMOUNT2, quantity, std::string("IEO send buy quantity"))
         ).send();
     }
+
+
+    void ieo::setparam(asset price, uint64_t quantity){
+        require_auth(_self);
+
+        globals _globals(_self, _self);
+        eosio_assert(_globals.begin() != _globals.end(), "global not init");
+
+        _globals.modify(_globals.begin() , 0, [&](auto &m) {
+            m.voteinfo[m.currentid].price = price;
+            m.voteinfo[m.currentid].quantity = quantity;
+        });
+    }
+
+    void ieo::clean(int64_t id){
+        require_auth(_self);
+
+        globals _globals(_self, _self);
+        eosio_assert(_globals.begin() != _globals.end(), "global not init");
+
+        auto itr_globals = _globals.begin();
+
+        auto itr_voteinfo = itr_globals->voteinfo.find(id);
+        if(itr_globals->voteinfo.end() != itr_voteinfo){
+
+            _globals.modify(_globals.begin() , 0, [&](auto &m) {
+                m.voteinfo.erase(itr_voteinfo);
+            });
+        }else{
+            eosio_assert(false, "id not exists");
+        }
+
+        voters _voters(_self, id);
+
+        while(_voters.begin() != _voters.end()){
+            _voters.erase(_voters.begin());
+        }
+    }
+
 }
 
 
@@ -195,7 +245,7 @@ void apply(uint64_t receiver, uint64_t code, uint64_t action) {
     if ((code == N(eosio.token) && action == N(transfer)) || (code == self && action != N(transfer))) {
         eosieo::ieo thiscontract(receiver);
         switch (action) {
-            EOSIO_API(eosieo::ieo, (init)(transfer)(createvote)(result))
+            EOSIO_API(eosieo::ieo, (init)(transfer)(createvote)(result)(setparam)(clean))
         }
     }else{
         eosio_assert(false, "error parameters");

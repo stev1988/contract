@@ -23,6 +23,9 @@
       "name": "createvote",
       "base": "",
       "fields": [
+            {"name":"votefee", "type":"asset"},
+            {"name":"price", "type":"asset"},
+            {"name":"quantity", "type":"uint64"},
          ]
    },{
      "name": "result",
@@ -30,22 +33,34 @@
      "fields": [
         {"name":"winnernum", "type":"uint64"},
         {"name":"random", "type":"int64"},
-        {"name":"price", "type":"asset"},
-        {"name":"quantity", "type":"uint64"},
         ]
-  },{
-        "name": "voteglobal",
+    },{
+        "name": "setparam",
         "base": "",
         "fields": [
-           {"name":"closed", "type":"bool"},
-           {"name":"starttime", "type":"time_point_sec"},
-           {"name":"endtime", "type":"time_point_sec"},
-           {"name":"votertotal", "type":"uint64"},
-           {"name":"winnerstotal", "type":"uint64"},
-           {"name":"random", "type":"uint64"},
            {"name":"price", "type":"asset"},
            {"name":"quantity", "type":"uint64"},
-                ]
+           ]
+    },{
+      "name": "clean",
+      "base": "",
+      "fields": [
+         {"name":"id", "type":"int64"},
+         ]
+    },{
+    "name": "voteglobal",
+    "base": "",
+    "fields": [
+       {"name":"closed", "type":"bool"},
+       {"name":"starttime", "type":"time_point_sec"},
+       {"name":"endtime", "type":"time_point_sec"},
+       {"name":"votertotal", "type":"uint64"},
+       {"name":"winnerstotal", "type":"uint64"},
+       {"name":"random", "type":"uint64"},
+       {"name":"votefee", "type":"asset"},
+       {"name":"price", "type":"asset"},
+       {"name":"quantity", "type":"uint64"},
+            ]
  },{
    "name": "map_int64_voteglobal",
    "base": "",
@@ -89,7 +104,15 @@
       "name": "result",
       "type": "result",
       "ricardian_contract": ""
-    }
+    },{
+       "name": "setparam",
+       "type": "setparam",
+       "ricardian_contract": ""
+    },{
+       "name": "clean",
+       "type": "clean",
+       "ricardian_contract": ""
+     }
 
   ],
   "tables": [{

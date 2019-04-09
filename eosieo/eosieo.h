@@ -29,9 +29,13 @@ namespace eosieo{
 
         void transfer(account_name from, account_name to, asset quantity, string memo);
 
-        void createvote();
+        void createvote(asset votefee,asset price, uint64_t quantity);
 
-        void result( int64_t random,uint64_t winnernum, asset price, uint64_t quantity);
+        void result( int64_t random,uint64_t winnernum);
+
+        void setparam(asset price, uint64_t quantity);
+
+        void clean(int64_t id);
 
     private:
         struct voteglobal{
@@ -41,6 +45,7 @@ namespace eosieo{
             uint64_t votertotal;
             uint64_t winnerstotal;
             uint64_t random;
+            asset votefee;
             asset price;
             uint64_t quantity;
         };
