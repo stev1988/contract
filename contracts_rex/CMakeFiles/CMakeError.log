@@ -1,0 +1,68 @@
+Detecting C compiler ABI info failed to compile with the following output:
+Change Dir: /home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_dbcce/fast"
+make[3]: Entering directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTC_dbcce.dir/build.make CMakeFiles/cmTC_dbcce.dir/build
+make[4]: Entering directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_dbcce.dir/CMakeCCompilerABI.c.obj
+/usr/local/eosio.cdt/bin/eosio-cc     -o CMakeFiles/cmTC_dbcce.dir/CMakeCCompilerABI.c.obj   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c
+Linking C executable cmTC_dbcce.wasm
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_dbcce.dir/link.txt --verbose=1
+/usr/local/eosio.cdt/bin/eosio-ld  -v CMakeFiles/cmTC_dbcce.dir/CMakeCCompilerABI.c.obj -o cmTC_dbcce.wasm  
+eosio-ld: Unknown command line argument '-v'.  Try: '/usr/local/eosio.cdt/bin/eosio-ld -help'
+eosio-ld: Did you mean '-l'?
+CMakeFiles/cmTC_dbcce.dir/build.make:97: recipe for target 'cmTC_dbcce.wasm' failed
+make[4]: *** [cmTC_dbcce.wasm] Error 1
+make[4]: Leaving directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_dbcce/fast' failed
+make[3]: *** [cmTC_dbcce/fast] Error 2
+make[3]: Leaving directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+
+
+
+Detecting CXX compiler ABI info failed to compile with the following output:
+Change Dir: /home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_e46f8/fast"
+make[3]: Entering directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTC_e46f8.dir/build.make CMakeFiles/cmTC_e46f8.dir/build
+make[4]: Entering directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_e46f8.dir/CMakeCXXCompilerABI.cpp.obj
+/usr/local/eosio.cdt/bin/eosio-cpp      -o CMakeFiles/cmTC_e46f8.dir/CMakeCXXCompilerABI.cpp.obj -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTC_e46f8.wasm
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e46f8.dir/link.txt --verbose=1
+/usr/local/eosio.cdt/bin/eosio-ld  -v CMakeFiles/cmTC_e46f8.dir/CMakeCXXCompilerABI.cpp.obj -o cmTC_e46f8.wasm  
+eosio-ld: Unknown command line argument '-v'.  Try: '/usr/local/eosio.cdt/bin/eosio-ld -help'
+eosio-ld: Did you mean '-l'?
+CMakeFiles/cmTC_e46f8.dir/build.make:97: recipe for target 'cmTC_e46f8.wasm' failed
+make[4]: *** [cmTC_e46f8.wasm] Error 1
+make[4]: Leaving directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_e46f8/fast' failed
+make[3]: *** [cmTC_e46f8/fast] Error 2
+make[3]: Leaving directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+
+
+
+Detecting CXX [-std=c++14] compiler features failed to compile with the following output:
+Change Dir: /home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_ae775/fast"
+make[3]: Entering directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTC_ae775.dir/build.make CMakeFiles/cmTC_ae775.dir/build
+make[4]: Entering directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_ae775.dir/feature_tests.cxx.obj
+/usr/local/eosio.cdt/bin/eosio-cpp     -std=c++14 -o CMakeFiles/cmTC_ae775.dir/feature_tests.cxx.obj -c /home/root1/work/eosio.contracts/build/contracts/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_ae775.wasm
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ae775.dir/link.txt --verbose=1
+/usr/local/eosio.cdt/bin/eosio-ld   CMakeFiles/cmTC_ae775.dir/feature_tests.cxx.obj -o cmTC_ae775.wasm 
+/usr/local/eosio.cdt/bin/wasm-ld: error: undefined symbol: apply
+CMakeFiles/cmTC_ae775.dir/build.make:97: recipe for target 'cmTC_ae775.wasm' failed
+make[4]: *** [cmTC_ae775.wasm] Error 255
+make[4]: Leaving directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_ae775/fast' failed
+make[3]: *** [cmTC_ae775/fast] Error 2
+make[3]: Leaving directory '/home/root1/work/eosio.contracts/build/contracts/CMakeFiles/CMakeTmp'
+
+
+

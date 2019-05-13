@@ -53,24 +53,27 @@ cleos --wallet-url http://localhost:6666 --url http://localhost:8000  system new
 
 cleos  --wallet-url http://localhost:6666 --url http://localhost:8000  set account permission contractexec active '{"threshold": 1,"keys": [{"key": "EOS5MeQ3UcmkFzo8Mo2qqgwGdAmbGrxZMnzPD9ZeTKM4vwftuqcaP","weight": 1}],"accounts": [{"permission":{"actor":"contractexec","permission":"eosio.code"},"weight":1}]}' owner -p contractexec
 
+
+cleos  --wallet-url http://localhost:6666 --url http://localhost:8000  set account permission eosbille1234 active '{"threshold": 1,"keys": [{"key": "EOS615yFCAme2GibLH8SZKQjLHWveKQvb2hjR2S7BWbyaXFiHm8SU","weight": 1}],"accounts": [{"permission":{"actor":"etbexchanger","permission":"eosio.code"},"weight":1}]}' owner -p eosbille1234
+
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 set contract contractexec /home/root1/work/eos/contracts/eosieo -p contractexec
 
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action contractexec init '[]' -p contractexec
 
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action contractexec createvote '["0.2000 EOS", 1000]' -p contractexec
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action contractexec createvote '["0.2000 EOS","0.2000 EOS", 1000]' -p contractexec
 
-
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user11111111", "contractexec", "0.1000 EOS","vote"]' -p user11111111
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user22222222", "contractexec", "0.2000 EOS","vote"]' -p user22222222
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user33333333", "contractexec", "0.2000 EOS","vote"]' -p user33333333
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user44444444", "contractexec", "0.2000 EOS","vote"]' -p user44444444
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user11111111", "contractexec", "0.2000 EOS","vote"]' -p user11111111
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user22222222", "contractexec", "0.2000 EOS","vote"]' -p user22222222
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user55555555", "contractexec", "0.2000 EOS","vote"]' -p user55555555
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action eosio.token transfer '["user44444444", "contractexec", "0.2000 EOS","vote"]' -p user44444444
+
 
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table contractexec contractexec globals
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table contractexec 16 voters
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table contractexec 1 voters
 
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action contractexec result '[15, 3]' -p contractexec
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action contractexec createvote '["0.1000 EOS", "0.2000 EOS", 1000]' -p contractexec
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action contractexec result '[15, 30]' -p contractexec
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action contractexec createvote '["0.2000 EOS", "0.2000 EOS", 1000]' -p contractexec
 
 cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push action contractexec setparam '["0.1000 EOS", 1000]' -p contractexec
 
@@ -93,16 +96,25 @@ cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 push actio
 
 cleos --wallet-url http://127.0.0.1:8900 --url http://120.78.176.26:8001 set contract eosgasplatfm /home/root1/work/eos/contracts/eosieo -p eosgasplatfm
 cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm init '[]' -p eosgasplatfm
-cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm createvote '["0.0001 EOS", "0.2000 EOS", 500]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm createvote '["0.2000 EOS", "0.0736 EOS", 500]' -p eosgasplatfm
 
 cleos --wallet-url http://127.0.0.1:8900 --url http://120.78.176.26:8001 get table eosgasplatfm eosgasplatfm globals
-cleos --wallet-url http://127.0.0.1:8900 --url http://120.78.176.26:8001 get table eosgasplatfm 1 voters
-cleos --wallet-url http://127.0.0.1:8900 --url http://120.78.176.26:8001 push action eosgasplatfm result '[14, 2]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://120.78.176.26:8001 get table eosgasplatfm 21 voters  --index 2 --key-type i64   -l 100 -L 0
+cleos --wallet-url http://127.0.0.1:8900 --url http://120.78.176.26:8001 push action eosgasplatfm result '[14, 100]' -p eosgasplatfm
 
-cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[1]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[4]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[5]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[6]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[7]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[8]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[9]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[10]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[11]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[12]' -p eosgasplatfm
+cleos --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm clean '[13]' -p eosgasplatfm
 
 
-
+cleos  --wallet-url http://127.0.0.1:8900 --url http://47.52.250.41:8001 push action eosgasplatfm setparam '["0.0502 EOS", 500]' -p eosgasplatfm
 
 
 
@@ -137,7 +149,7 @@ actions: [{
       data: {
         from: 'user11111111',	//用户
 	to: 'eosgasplatfm',	//合约账户,这里是测试账户,上线时才能确定
-        amount: '0.2000 EOS',	//0.2申购费用
+        quantity: '0.2000 EOS',	//0.2申购费用
 	memo: 'vote',		//'vote'表示订购
       },
     }]
@@ -154,7 +166,7 @@ actions: [{
       data: {
         from: 'user11111111',		//用户
 	to: 'eosgasplatfm',		//合约账户,这里是测试账户,上线时才能确定
-        amount: '2.0000 EOS',		//购买费用=价格*数量; 价格和数量见下文globals表
+        quantity: '2.0000 EOS',		//购买费用=价格*数量; 价格和数量见下文globals表
 	memo: 'buy:aabbccddeeffgghh',	//'buy'表示购买; ':'是分隔符; 'aabbccddeeffgghh'是ETH接收地址
       },
     }]
@@ -224,10 +236,11 @@ cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table 
 }
 
 
-cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table eosgasplatfm 3 voters -L user22222222 -l 1 //3表示第3期, -L是-lower, -l是-limit
+查找某个用户信息
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table eosgasplatfm 3 voters -L user22222222 -l 1 //'-L user22222222'表示从小于等于user22222222开始取, '-l 1'表示只取1条
 {
   "rows": [{
-      "account": "user22222222",
+      "account": "user22222222",		//这里要判断用户名是否匹配,因为'-L'表示小于等于'user22222222',有可能返回的是'user33333333'
       "number": 1,
       "time": "2019-04-08T09:29:39",
       "iswinner": 0,
@@ -236,5 +249,98 @@ cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table 
   ],
   "more": true
 }
+
+
+总数据:
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table contractexec 16 voters 
+{
+  "rows": [{
+      "account": "user11111111",
+      "number": 0,
+      "time": "2019-04-09T04:08:12",
+      "iswinner": 1,
+      "ethaddress": ""
+    },{
+      "account": "user22222222",
+      "number": 1,
+      "time": "2019-04-09T06:41:49",
+      "iswinner": 1,
+      "ethaddress": ""
+    },{
+      "account": "user33333333",
+      "number": 2,
+      "time": "2019-04-09T06:41:49",
+      "iswinner": 1,
+      "ethaddress": ""
+    },{
+      "account": "user44444444",
+      "number": 3,
+      "time": "2019-04-09T06:41:50",
+      "iswinner": 1,
+      "ethaddress": ""
+    },{
+      "account": "user55555555",
+      "number": 4,
+      "time": "2019-04-09T06:41:50",
+      "iswinner": 1,
+      "ethaddress": ""
+    }
+  ],
+  "more": false		//false表示已经取完
+}
+
+从第一条开始取
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table contractexec 16 voters -l 3	//'-l'是limit, 3表示最多取3条
+{
+  "rows": [{
+      "account": "user11111111",
+      "number": 0,
+      "time": "2019-04-09T04:08:12",
+      "iswinner": 1,
+      "ethaddress": ""
+    },{
+      "account": "user22222222",
+      "number": 1,
+      "time": "2019-04-09T06:41:49",
+      "iswinner": 1,
+      "ethaddress": ""
+    },{
+      "account": "user33333333",
+      "number": 2,
+      "time": "2019-04-09T06:41:49",
+      "iswinner": 1,
+      "ethaddress": ""
+    }
+  ],
+  "more": true		//true表示后面还有数据
+}
+
+从上面最后一条'user33333333'开始往后取
+cleos  --wallet-url http://127.0.0.1:6666 --url http://localhost:8000 get table contractexec 16 voters -l 3 -L user33333333 	//'-l 3'表示取3条, '-L user33333333'表示从小于等于user33333333开始取
+{
+  "rows": [{
+      "account": "user33333333",
+      "number": 2,
+      "time": "2019-04-09T06:41:49",
+      "iswinner": 1,
+      "ethaddress": ""
+    },{
+      "account": "user44444444",
+      "number": 3,
+      "time": "2019-04-09T06:41:50",
+      "iswinner": 1,
+      "ethaddress": ""
+    },{
+      "account": "user55555555",
+      "number": 4,
+      "time": "2019-04-09T06:41:50",
+      "iswinner": 1,
+      "ethaddress": ""
+    }
+  ],
+  "more": false
+}
+
+
 
 

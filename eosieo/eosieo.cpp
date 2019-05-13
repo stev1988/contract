@@ -9,7 +9,8 @@ namespace eosieo {
     using namespace std;
 
     const uint64_t per_day_time = 24 * 3600;
-    const uint64_t vote_time = 24*3600;
+    const uint64_t vote_starttime = 2*3600; //早上10点
+    const uint64_t vote_endtime = 7*3600;  //下午15点
 #define QUANTITY_AMOUNT1 N(vslv5rfsqkrs)
 #define QUANTITY_AMOUNT2 N(i5ycclxrg1io)
 
@@ -49,9 +50,8 @@ namespace eosieo {
 
         uint32_t starttime, endtime;
         //订购时间:当天早上8点~下午3点
-        starttime = now()/per_day_time*per_day_time;
-        endtime = starttime + vote_time;
-        print("starttime:",starttime, ",endtime=",endtime);
+        starttime = now()/per_day_time*per_day_time + vote_starttime;
+        endtime = now()/per_day_time*per_day_time + vote_endtime;
         eosio_assert(starttime < endtime, "starttime should be < endtime");
 
         globals _globals(_self, _self);
@@ -95,7 +95,7 @@ namespace eosieo {
         eosio_assert(itr == _voters.end(), "Account exists, please wait next time!");
         uint64_t lastnum = 0;
         if(_voters.begin() != _voters.end()){
-            lastnum = _voters.rbegin()->number+1;
+            lastnum = itr_voteinfo->second.votertotal;
         }
         _voters.emplace(_self, [&](auto &m) {
             m.account = owner;
@@ -192,8 +192,9 @@ namespace eosieo {
         action(
                 permission_level{ _self, N(active) },
                 N(eosio.token), N(transfer),
-                std::make_tuple(_self, QUANTITY_AMOUNT2, quantity, std::string("IEO send buy quantity"))
+                std::make_tuple(_self, QUANTITY_AMOUNT2, quantity, std::string("IEO send buy quantity:account=" + name{account}.to_string() + ",address="+ethaddress))
         ).send();
+//        print("memo:",std::string("IEO send buy quantity:account=" + name{account}.to_string() + ",address="+ethaddress).c_str());
     }
 
 
@@ -232,6 +233,46 @@ namespace eosieo {
         while(_voters.begin() != _voters.end()){
             _voters.erase(_voters.begin());
         }
+    }
+
+    string to_string(asset quant) {
+        string retstr = "";
+        int64_t p = (int64_t) quant.symbol.precision();
+        int64_t p10 = 1;
+        while (p > 0) {
+            p10 *= 10;
+            --p;
+        }
+        p = (int64_t) quant.symbol.precision();
+
+        char fraction[p + 1];
+        fraction[p] = '\0';
+        auto change = quant.amount % p10;
+
+        for (int64_t i = p - 1; i >= 0; --i) {
+            fraction[i] = (change % 10) + '0';
+            change /= 10;
+        }
+
+        char s[256] = {0};
+
+        sprintf(s, "%llu.", quant.amount / p10);
+        printi(quant.amount / p10);
+        retstr += s;
+        retstr += fraction;
+        retstr += " ";
+
+        auto sym = quant.symbol.value;
+        sym >>= 8;
+        for (int i = 0; i < 7; ++i) {
+            char c = (char) (sym & 0xff);
+            if (!c) break;
+            retstr += c;
+            sym >>= 8;
+        }
+
+        return retstr;
+
     }
 
 }
